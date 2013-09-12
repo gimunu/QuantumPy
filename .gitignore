@@ -1,2 +1,2 @@
-.pyc
-.tm_proprties
+*.pyc
+.tm_properties
