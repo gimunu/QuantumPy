@@ -1,2 +1,4 @@
 *.pyc
 .tm_properties
+
+Examples/quantumPy

@@ -30,7 +30,7 @@ printmsg = messages.print_msg  #shorter name
 #
 #############################################
 class Operator(object):
-    """Generic operator class acting on MeshFunction."""
+    """Generic operator class acting on a MeshFunction."""
     def __init__(self, **kwds):
         super(Operator, self).__init__()        
         self.name   = kwds.get('name', "Operator")
