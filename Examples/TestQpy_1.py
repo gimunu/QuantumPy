@@ -57,8 +57,8 @@ mf2[:] = 0.0
 
 Lap = qp.system.Laplacian(box, Strategy = 'Fourier')
 
-T = qp.system.Kinetic(box, Strategy = 'Fourier')
-# T = qp.system.operators.Kinetic(box)
+# T = qp.system.Kinetic(box, Strategy = 'Fourier')
+T = qp.system.operators.Kinetic(box)
 
 Ops = [T]
 

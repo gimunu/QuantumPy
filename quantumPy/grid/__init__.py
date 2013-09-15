@@ -18,6 +18,6 @@
 from mesh import Mesh, MeshFunction
 from box  import Box, Cube
 from box  import mesh_to_cube, cube_to_mesh
+from derivatives import fd_derivative
 
-
-__all__ = ['mesh', 'box']
+__all__ = ['mesh', 'box', 'derivatives']

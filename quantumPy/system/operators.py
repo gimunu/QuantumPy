@@ -16,12 +16,13 @@
 # 02110-1301, USA.
 
 import numpy as np
+from scipy import fftpack
 from quantumPy.base import messages
 from quantumPy.base.math import rs_to_fs, fs_to_rs
 from quantumPy.grid.mesh import Mesh, MeshFunction
 from quantumPy.grid.box  import Cube, Box
 from quantumPy.grid.box  import mesh_to_cube, cube_to_mesh
-
+from quantumPy.grid.derivatives import fd_derivative
 
 printmsg = messages.print_msg  #shorter name     
 
@@ -108,10 +109,16 @@ class Laplacian(Operator):
             self.formula += '+ d^2/dz^2' 
         
         self.strategy = kwds.get('Strategy', 'finite difference')
+
+        self.boundary = kwds.get('Boundary', 'zero')
         
         self.cube = None # A cube mesh to perform FFTs
+        self.fdorder = None
         if (self.strategy.lower() == 'fourier'):
             self.cube = Cube(self.mesh, Attributes = 'RS + FS')
+        elif (self.strategy.lower() == 'finite difference'):
+            self.fdorder = kwds.get('FDorder', 4)
+
 
     def write_info(self, indent = 0):
         from functools import partial
@@ -122,7 +129,10 @@ class Laplacian(Operator):
         print_msg( "strategy  = %s "%(self.strategy), indent = indent+1)
         
         if (self.cube != None):
-            self.cube.write_info(indent = indent + 1)
+            self.cube.write_info(indent = indent+2)
+        
+        if self.fdorder:
+            print_msg( "f.d. order = %d   (%d-points stencil)"%(self.fdorder, self.fdorder+1), indent = indent+2)
                 
     def applyRigth(self,wfinR):
         
@@ -130,21 +140,21 @@ class Laplacian(Operator):
         
         if   self.strategy.lower() == 'finite difference':
             #do something
-            wfout = wfinR
+            # wfout = np.gradient(np.gradient(wfinR, wfinR.mesh.spacing), wfinR.mesh.spacing)
+            wfout = fd_derivative(wfinR, Degree = 2, Order = self.fdorder)
             
         elif self.strategy.lower() == 'fourier': 
             # Use derivatives in Fourier space F(f'(x))=ik f(k), 
             # hence:
             # \Nabla^2 = F^{-1}(-k^2 F(f(x)))
             
-            # self.cube = self.cube if (self.cube != None) else Cube(wfinR.mesh) # Create a new cube mesh if needed
-            # self.cube.write_info()
-
             cf = mesh_to_cube(wfinR, self.cube)
             Fcf = rs_to_fs(cf)
             K = Fcf.mesh.FSpoints        
             cf = fs_to_rs(K**2.0 * Fcf)
             wfout = cube_to_mesh(cf, wfinR.mesh)
+
+            # fftpack.diff(wfinR, order=2, period=np.abs(self.cube.RSsize[1]-self.cube.RSsize[0]) )
             
         else:
             raise Exception("Unrecognized option")
