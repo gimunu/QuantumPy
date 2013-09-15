@@ -31,20 +31,56 @@ printmsg = messages.print_msg  #shorter name
 #
 #############################################
 class Operator(object):
-    """Generic operator class acting on a MeshFunction."""
+    """Generic operator acting on a MeshFunction.
+    
+    ...
+    
+    Attributes
+    ----------
+    name : str
+        Operator long literal name.
+    symbol : str
+        Operator symbol (LaTeX format).
+    formula : str
+        Operator formula (LaTeX format).
+    hermitian : bool
+        Whether the operator is Hermitian or not.
+    
+    """
     def __init__(self, **kwds):
         super(Operator, self).__init__()        
         self.name   = kwds.get('name', "Operator")
         self.symbol = kwds.get('symbol', "Op")
-        self.formula = kwds.get('formula', None)
+        self.formula = kwds.get('formula', self.symbol)
         self.hermitian = kwds.get('hermitian', True)
 
     def apply(self,wfin):
-        """ Apply the operator to a wavefunction."""
+        """ Apply the operator to a wavefunction.
+        
+        ...
+        
+        Parameters
+        ----------
+        wfin : MeshFunction
+            Function acting from the right.
+        
+        """
         return  self.applyRigth(wfin)
 
     def expectationValue(self, wfR, wfL = None):
-        """ Calculate the expectation value of the operator"""
+        """ Calculate the expectation value of the operator.
+        
+        ...
+        
+        Parameters
+        ----------
+        wfR : MeshFunction
+            Function acting from the right.
+        wfL : MeshFunction
+            Function acting from the left.
+        
+        """
+        
         if wfL == None:
             wfL = wfR.copy().conjugate()
 
@@ -182,30 +218,3 @@ class Kinetic(Laplacian):
         return 0.5*super(Kinetic,self).applyRigth(wfinR)
     
         
-
-# def Kinetic(psiG, mesh):
-#     kN   = mesh.fs.points
-#     out = kN**2 * psiG / 2.0
-#     return out
-#     
-# 
-# def Vext(psiG, mesh):
-#     psiGx  = fs_to_rs(psiG)
-#     vextGx  = VextF(mesh.rs.points)
-#     vpsiGx =  vextGx * psiGx
-#     out = rs_to_fs(vpsiGx)
-#     return out
-# 
-# def H(psiG, mesh):
-#     Hpsi = Kinetic(psiG, mesh) + Vext(psiG, mesh) 
-#     return Hpsi
-# 
-# def U(psiG, mesh, dt): 
-#     HNpsi = psiG
-#     Upsi = np.zeros(psiG.size) + 0j
-#     N = 5 # order of the exponential
-#     for i in range(N):
-#         Upsi +=  HNpsi * (- 1j * dt)**i /factorial(i)
-#         HNpsi = H(HNpsi, mesh)      
-# 
-#     return Upsi     
