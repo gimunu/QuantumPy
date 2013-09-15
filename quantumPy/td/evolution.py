@@ -54,13 +54,15 @@ class Propagator(Operator):
         time = kwds.get('time', 0.00)
         
         if   self.method.lower() == "exponential":
-            exp(wfinR, self.H, time, dt)
+            wfout = exp(wfinR, self.H, time, dt)
             
         elif self.method.lower() == "aetrs":
             print "not implemented"
 
         else:
             raise Exception("unknown option")    
+
+        return wfout    
 
     def write_info(self, indent = 0): 
         from functools import partial
@@ -74,13 +76,13 @@ class Propagator(Operator):
         
 
 
-def exp(psiM, Hop, time, dt, order = 5 ): 
-    HpsiM = psiM
-    UpsiM = psiM.copy()
-    UpsiM[:] = 0.0
+def exp(wf, Hop, time, dt, order = 5 ): 
+    """ Exponential operator """
+    Hwf = wf
+    Uwf = wf.copy()
+    Uwf[:] = 0.0
     for i in range(order):
-        UpsiM +=  HpsiM * (- 1j * dt)**i /factorial(i)
-        HpsiM = Hop.apply(HpsiM)
-        # print i, HpsiM      
+        Uwf +=  Hwf * (- 1j * dt)**i /factorial(i)
+        Hwf = Hop.apply(Hwf)
 
-    return UpsiM             
+    return Uwf             

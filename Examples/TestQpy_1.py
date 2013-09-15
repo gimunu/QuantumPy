@@ -62,7 +62,7 @@ T = qp.system.operators.Kinetic(box)
 
 Ops = [T]
 
-HBaseOp = qp.system.HamiltonianBase(Operators = Ops)
+HBaseOp = qp.system.Hamiltonian(Operators = Ops)
 HBaseOp.write_info()
 
 print "<H> = %s" % (HBaseOp.expectationValue(mf))
@@ -83,24 +83,27 @@ print "E = %s"%(E)
 ET = T.expectationValue(mf)
 print"ET = %s"%(ET)
 
+# Test operator composition
+# OP = qp.system.Operator(Operators = [T,T,Lap])
+# OP.write_info()
+
+
 U = qp.td.Propagator(HBaseOp)
 U.write_info()
 
-nt = 10
+nt = 1000
 dt = 0.01
 
 wft = mf.copy()
-print "straness %s"%U.H.apply(wft)
-# print "straness %s"%U.expectationValue(wft)
+# print "straness %s"%U.H.expectationValue(wft)
+# print "straness %s"%U.expectationValue(wft, dt = 0.0)
 
-# print "i        t       <E>"
-# for it in range(0,nt):
-#     wft=U.apply(wft, dt)
-#     E = U.H.expectationValue(wft)
-#     print "%d\t %1.4e %s"%(i, i*dt, E)
+print "i        t              <E>"
+for i in range(0,nt):
+    wft = U.apply(wft, dt = dt)
+    E   = U.H.expectationValue(wft)
+    print "%d\t %1.4f \t%s"%(i, i*dt, E.real)
     
-OP = qp.system.Operator(Operators = [T,T,Lap])
-OP.write_info()
 
 
 if False:
