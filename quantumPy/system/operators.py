@@ -45,6 +45,8 @@ class Operator(object):
         Operator formula (LaTeX format).
     hermitian : bool
         Whether the operator is Hermitian or not.
+    op_list : list of Operator instances
+        A list of operators composing the operator.
     
     """
     def __init__(self, **kwds):
@@ -53,8 +55,18 @@ class Operator(object):
         self.symbol = kwds.get('symbol', "Op")
         self.formula = kwds.get('formula', self.symbol)
         self.hermitian = kwds.get('hermitian', True)
+        
+        self.op_list = kwds.get('Operators', [])
+        
+    def update(self):
+        """Update the internal attributes.
+        
+        This method should be called in order to regenerate all the internal attribute dependencies.
+        
+        """
+        pass    
 
-    def apply(self,wfin):
+    def apply(self, wfin, **kwds):
         """ Apply the operator to a wavefunction.
         
         ...
@@ -63,11 +75,13 @@ class Operator(object):
         ----------
         wfin : MeshFunction
             Function acting from the right.
+        **kwds : dictionary
+            Optional additional parameters. This allow a subclass to extend the method.
         
         """
-        return  self.applyRigth(wfin)
+        return  self.applyRigth(wfin, **kwds)
 
-    def expectationValue(self, wfR, wfL = None):
+    def expectationValue(self, wfR, wfL = None, **kwds):
         """ Calculate the expectation value of the operator.
         
         ...
@@ -78,23 +92,45 @@ class Operator(object):
             Function acting from the right.
         wfL : MeshFunction
             Function acting from the left.
+        **kwds : dictionary
+            Optional parameters for subclass extension.
         
         """
         
         if wfL == None:
             wfL = wfR.copy().conjugate()
 
-        out = (wfL * self.applyRigth(wfR)).integrate()
+        out = (wfL * self.applyRigth(wfR, **kwds)).integrate()
 
         return out 
         
         
-    def applyRigth(self,wfinR):    
-        # User should overload this method to define the operator (right) action    
-        raise Exception( "Error: applyRigth() method of %s is Undefined."%(self.name))
+    def applyRigth(self, wfin, **kwds): 
+        """Operator right action.
+        
+        Compose the right action by sequentially applying all the operators in the 
+        operators list.
+        
+        Parameters
+        ----------
+        wfin : MeshFunction
+            Function acting from the right.
+        **kwds : dictionary
+            Optional parameters for subclass extension.
+        
+        """   
+        wfout    = wfin.copy()
+        wfout[:] = 0.0 
+        for Op in self.op_list:
+            wfout += Op.applyRigth(wfin, **kwds)
         return wfout
 
-    def applyLeft(self,wfinL):    
+    def applyLeft(self, wfinL, **kwds):    
+        """Operator left action.
+        
+        This is a stub method that should be overridden by a subclass.
+        
+        """   
         # apply the operator
         raise Exception( "Error: applyLeft() method of %s is Undefined."%(self.name)) 
         return wfout
@@ -107,6 +143,9 @@ class Operator(object):
         printmsg( "%s operator (%s): "%(self.name, self.symbol) )       
         if self.formula != None:
             print_msg( "%s = %s "%(self.symbol, self.formula), indent = indent+1)    
+        # Write details of all the composing ops
+        for Op in self.op_list:
+            Op.write_info(indent = indent+1)
 
 
 #############################################
@@ -137,7 +176,7 @@ class Laplacian(Operator):
         self.mesh = mesh
         
         self.name    = 'Laplacian'
-        self.symbol  = '\Nabla^2'
+        self.symbol  = '\\nabla^2'
         self.formula = 'd^2/dx^2'
         if mesh.dim > 1:
             self.formula += '+ d^2/dy^2' 
@@ -212,7 +251,7 @@ class Kinetic(Laplacian):
         super(Kinetic,self).__init__(mesh, **kwds)
         self.name    = 'Kinetic'
         self.symbol  = 'T'
-        self.formula = '1/2 \Nabla^2'
+        self.formula = '1/2 \\nabla^2'
         
     def applyRigth(self,wfinR): 
         return 0.5*super(Kinetic,self).applyRigth(wfinR)
