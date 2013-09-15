@@ -23,40 +23,31 @@ import pylab as pl
 import scipy as sp
 import pylab as pl
 
-# Python standard libs
-import sys
-
-# Module to test
 import quantumPy as qp
 from quantumPy import *
 
-
+# First Create the box
+# By default the dimensionality is set to 1 
 box = qp.grid.Box(shape = 'Sphere', radius = 10.0, spacing = 0.1)
-box.write_info()
-# print "****"
-# mesh = qp.grid.Mesh()
-# mesh.write_info()
+box.write_info() # Write a detailed description of the box
 
+# Create an empty  MeshFunction living on the box
 array = np.zeros(box.np)
 mf = qp.grid.MeshFunction( array, mesh = box)
-# print "before "+ mf.__class__.__name__
 
+# Create a gaussian wave-packet with initial velocity k
 X = box.points
 k = 4.0
 sigma = np.sqrt(2.0)/k
 mf = qp.grid.MeshFunction( np.pi**(-1.0/4.0) * sigma**(-1.0/2.0) *  np.exp(-X[:]**2.0 / (2.0*sigma**2.0) + 1j*k*X[:]) , mesh = box)
-# print "norm = %s" % (mf*mf.conjugate()).integrate()  
-# mf /= np.sqrt((mf*mf.conjugate()).integrate()) 
-# print "after "+ mf.__class__.__name__
+# Check the normalization
+# print "Norm = %f" % (mf*mf.conjugate()).integrate().real  
 
-mf2 = mf.copy()
-mf2[:] = 0.0
-# print "mf2  "+ mf2.__class__.__name__
-# print mf
-# print X
 
+# Create a Laplace operator
 Lap = qp.system.Laplacian(box, Strategy = 'Fourier')
 
+# Create the kinetic operator 
 # T = qp.system.Kinetic(box, Strategy = 'Fourier')
 T = qp.system.operators.Kinetic(box)
 
@@ -88,25 +79,26 @@ print"ET = %s"%(ET)
 # OP.write_info()
 
 
+# Time propagation
+# Create the evolution operator
 U = qp.td.Propagator(HBaseOp)
 U.write_info()
 
-nt = 1000
-dt = 0.01
+nt = 400
+dt = 0.001
+
 
 wft = mf.copy()
-# print "straness %s"%U.H.expectationValue(wft)
-# print "straness %s"%U.expectationValue(wft, dt = 0.0)
-
 print "i        t              <E>"
+# time-evolution loop
 for i in range(0,nt):
-    wft = U.apply(wft, dt = dt)
-    E   = U.H.expectationValue(wft)
-    print "%d\t %1.4f \t%s"%(i, i*dt, E.real)
+    wft = U.apply(wft, dt = dt)         # Apply the propagator
+    E   = U.H.expectationValue(wft)     # Calculate the energy
+    print "%d\t %1.4f \t%f"%(i, i*dt, E.real)
     
 
 
-if False:
+if True:
     pl.rc('font', family='serif')
     pl.rc('font', size=12)
     pl.rc('legend', fontsize=10)
@@ -115,7 +107,8 @@ if False:
     p1 = fig.add_subplot(1, 2, 1, title = 'Wavefunction - RS')
     p1.plot(mf.mesh.points, mf.real,  lw=1, color='r', label='$mf.real$')
     p1.plot(mf.mesh.points, mf.imag,  lw=1, color='b', label='$mf.imag$')
-    p1.plot(mf.mesh.points, (mf.conjugate()*mf).real,  lw=2, color='g', label='$density$')
+    p1.plot(mf.mesh.points, (mf.conjugate()*mf).real,  lw=2, color='g', label='$den$')
+    p1.plot(mf.mesh.points, (wft.conjugate()*wft).real,  lw=2, color='black', label='$den(t)$')
     # p1.plot(Lmf.mesh.points, (Lmf.conjugate()*Lmf).real,  lw=2, color='g', label='$density$')
     p1.legend()
 
