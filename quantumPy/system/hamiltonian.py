@@ -28,10 +28,10 @@ printmsg = messages.print_msg  #shorter name
 #############################################
 #
 #############################################
-class HamiltonianBase(Operator):
-    """Basic Hamiltonian operator
+class Hamiltonian(Operator):
+    """Hamiltonian operator.
     
-    ...
+    Utility class to create an Hamiltonian.
     
     Attributes
     ----------
@@ -40,53 +40,11 @@ class HamiltonianBase(Operator):
     
     """
     def __init__(self, **kwds):
-        super(HamiltonianBase, self).__init__(**kwds)
+        super(Hamiltonian, self).__init__(**kwds)
         self.name   = "Hamiltonian"
         self.symbol = "H"
         self.time = kwds.get('Time', 0.0)
-        self.operators = kwds.get('Operators', [])
-
-    def apply(self, wfin, time = 0.0):
-        print "IN H apply"
-        self.applyRigth(wfin, time)
-
-    def applyRigth(self, wfin, time = 0.0): 
-        print "IN H applyRigth"   
-        wfout    = wfin.copy()
-        wfout[:] = 0.0 
-        for Op in self.operators:
-            wfout += Op.applyRigth(wfin)
-        return wfout
-
-    def applyLeft(self, wfin, time = 0.0):    
-        wfout    = wfin.copy()
-        wfout[:] = 0.0
-        for Op in self.operators:
-            wfout += Op.applyLeft(wfin)
-        return wfout
-        
-    def write_info(self, indent = 0):
-        from functools import partial
-        printmsg = partial(messages.print_msg, indent = indent)       
-        print_msg = messages.print_msg    
-        
-        printmsg( "Hamiltonian info: " )
-        printmsg( " " ) 
-        Hstring = '%s = '%self.symbol 
-        for Op in self.operators:
-            Hstring = Hstring + Op.symbol + ' + ' 
-        print_msg( "%s"%(Hstring), indent = indent + 1)        
-        printmsg( " " ) 
-        for Op in self.operators:
-            Op.write_info(indent = indent+1)
 
 
-#############################################
-#
-#############################################
-class Hamiltonian(HamiltonianBase):
-    """Hamiltonian class with simplified interface"""
-    def __init__(self, **kwds):
-        super(Hamiltonian, self).__init__(**kwds)
 
 
