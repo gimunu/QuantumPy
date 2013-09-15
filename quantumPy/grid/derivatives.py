@@ -41,6 +41,9 @@ _fd_weight['2_1d_7p_c']=[-1./560., 8./315.,-1./5., 8./5., -205./72., 8./5., -1./
 
 class FD_Derivatives(object):
     """Finite differences derivatives class.
+    
+    ...
+    
     """
     def __init__(self, mesh, **kwds):
         super(FD_Derivatives, self).__init__()
@@ -49,7 +52,11 @@ class FD_Derivatives(object):
 
 
 def fd_derivative(wfin, **kwds):
-    """Finite difference derivative for MeshFunction."""
+    """Finite difference derivative of a MeshFunction.
+    
+    ...
+    
+    """
 
     mesh = wfin.mesh
     boundary = kwds.get('Boundary', 'zero') # Boundary conditions
@@ -79,7 +86,7 @@ def fd_derivative(wfin, **kwds):
         #1D
         n1 = mesh.np
         sp =  order + 1 # number of stencil points
-        stname = '%d_%dd_%dp_c'%(degree, mesh.dim, sp)    
+        stname = '%d_%dd_%dp_c'%(degree, mesh.dim, sp) # pick the appropriate weights   
         for ii in range(sp/2, n1 - sp/2):
             for jj in range(sp):
                 wfout[ii] += wfin[ii - sp/2 + jj] * _fd_weight[stname][jj]
