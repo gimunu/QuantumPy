@@ -32,19 +32,20 @@ class Propagator(Operator):
     Attributes
     ----------
     H : Hamiltonian
-        The hamiltonian operator.
-    type : str
-        The approximation method. Default 'exponential'
+        The hamiltonian operator. The choice is not restricted to the Hamiltonian class
+        and other subclass of Operator can be employed.
+    method : str
+        The approximation method. Default value is 'exponential'.
     
     """
     def __init__(self, Hamiltonian, **kwds):
         super(Propagator, self).__init__(**kwds)
-        self.name    = 'Propagator'
+        self.name    = 'Time-propagator'
         self.symbol  = 'U(t, t+dt)'
-        self.formula = '\exp(-i dt H)'
+        self.formula = '\exp(-i dt H(t))'
         
         self.H    = Hamiltonian
-        self.type = kwds.get('Type', 'exponential')
+        self.method = kwds.get('Method', 'exponential')
         
         
     def applyRigth(self, wfinR, **kwds):
@@ -52,21 +53,23 @@ class Propagator(Operator):
         dt   = kwds.get('dt', 0.01)
         time = kwds.get('time', 0.00)
         
-        if   self.type.lower() == "exponential":
+        if   self.method.lower() == "exponential":
             exp(wfinR, self.H, time, dt)
-        elif self.type.lower() == "aetrs":
+            
+        elif self.method.lower() == "aetrs":
             print "not implemented"
+
         else:
-            raise "unknown option"    
+            raise Exception("unknown option")    
 
     def write_info(self, indent = 0): 
         from functools import partial
         printmsg = partial(messages.print_msg, indent = indent)       
         print_msg = messages.print_msg    
            
-        printmsg("Time propagator:")
-        printmsg(" " ) 
-        print_msg("type = %s"%(self.type), indent = indent+1)  
+        printmsg( "%s (%s): "%(self.name, self.symbol) )       
+        print_msg("%s = %s "%(self.symbol, self.formula), indent = indent+1)    
+        print_msg("method = %s"%(self.method), indent = indent+1)  
         self.H.write_info(indent = indent+1)
         
 
@@ -78,6 +81,6 @@ def exp(psiM, Hop, time, dt, order = 5 ):
     for i in range(order):
         UpsiM +=  HpsiM * (- 1j * dt)**i /factorial(i)
         HpsiM = Hop.apply(HpsiM)
-        print i, HpsiM      
+        # print i, HpsiM      
 
     return UpsiM             
