@@ -29,7 +29,16 @@ printmsg = messages.print_msg  #shorter name
 #
 #############################################
 class HamiltonianBase(Operator):
-    """Basic Hamiltonian operator"""
+    """Basic Hamiltonian operator
+    
+    ...
+    
+    Attributes
+    ----------
+    time : float
+        Current time. Used when a time-dependent term is included.
+    
+    """
     def __init__(self, **kwds):
         super(HamiltonianBase, self).__init__(**kwds)
         self.name   = "Hamiltonian"
@@ -37,14 +46,19 @@ class HamiltonianBase(Operator):
         self.time = kwds.get('Time', 0.0)
         self.operators = kwds.get('Operators', [])
 
-    def applyRigth(self,wfin):    
+    def apply(self, wfin, time = 0.0):
+        print "IN H apply"
+        self.applyRigth(wfin, time)
+
+    def applyRigth(self, wfin, time = 0.0): 
+        print "IN H applyRigth"   
         wfout    = wfin.copy()
         wfout[:] = 0.0 
         for Op in self.operators:
             wfout += Op.applyRigth(wfin)
         return wfout
 
-    def applyLeft(self,wfin):    
+    def applyLeft(self, wfin, time = 0.0):    
         wfout    = wfin.copy()
         wfout[:] = 0.0
         for Op in self.operators:
@@ -64,7 +78,7 @@ class HamiltonianBase(Operator):
         print_msg( "%s"%(Hstring), indent = indent + 1)        
         printmsg( " " ) 
         for Op in self.operators:
-            Op.write_info()
+            Op.write_info(indent = indent+1)
 
 
 #############################################
