@@ -74,22 +74,34 @@ print "<I> = %s" % (I.expectationValue(mf))
 # HBaseOp.apply(mf)
 
 Fmf = qp.base.math.rs_to_fs(mf)
-# print "norm(mf)=%s"%((mf.conjugate()*mf).sum()*mf.mesh.spacing)
-# print "norm(Fmf)=%s"%((Fmf.conjugate()*Fmf).sum()*Fmf.mesh.FSspacing)
 tmp =Fmf.mesh.FSpoints**2.0 * Fmf
-# tmp =Fmf
-# print Fmf
-# print "tmp = %s" %(tmp.__class__.__name__)
-# print tmp
 Lmf = qp.base.math.fs_to_rs(tmp, return_mf = True)
-# print "norm(Lmf)=%s"%((Lmf.conjugate()*Lmf).sum()*Lmf.mesh.spacing)
 E = 0.5*(mf.conjugate()*Lmf).integrate()
-# print "Class(E) = %s" %(E.__class__.__name__)
 print "E = %s"%(E)
 
 # ET = (mf.conjugate()*T.apply(mf)).integrate()
 ET = T.expectationValue(mf)
 print"ET = %s"%(ET)
+
+U = qp.td.Propagator(HBaseOp)
+U.write_info()
+
+nt = 10
+dt = 0.01
+
+wft = mf.copy()
+print "straness %s"%U.H.apply(wft)
+# print "straness %s"%U.expectationValue(wft)
+
+# print "i        t       <E>"
+# for it in range(0,nt):
+#     wft=U.apply(wft, dt)
+#     E = U.H.expectationValue(wft)
+#     print "%d\t %1.4e %s"%(i, i*dt, E)
+    
+OP = qp.system.Operator(Operators = [T,T,Lap])
+OP.write_info()
+
 
 if False:
     pl.rc('font', family='serif')

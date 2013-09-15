@@ -58,14 +58,23 @@ class Operator(object):
         
         self.op_list = kwds.get('Operators', [])
         
+        self.update()
+        
     def update(self):
         """Update the internal attributes.
         
         This method should be called in order to regenerate all the internal attribute dependencies.
         
         """
-        pass    
-
+        if len(self.op_list) > 0:
+            self.formula = ''
+        
+        for i in range(len(self.op_list)):
+            Op = self.op_list[i]
+            self.formula = self.formula + Op.symbol  
+            if i < len(self.op_list)-1:
+                self.formula = self.formula + ' + '
+            
     def apply(self, wfin, **kwds):
         """ Apply the operator to a wavefunction.
         
@@ -125,15 +134,26 @@ class Operator(object):
             wfout += Op.applyRigth(wfin, **kwds)
         return wfout
 
-    def applyLeft(self, wfinL, **kwds):    
+    def applyLeft(self, wfin, **kwds):    
         """Operator left action.
         
-        This is a stub method that should be overridden by a subclass.
+        Compose the right action by sequentially applying all the operators in the 
+        operators list.
+        
+        Parameters
+        ----------
+        wfin : MeshFunction
+            Function acting from the left.
+        **kwds : dictionary
+            Optional parameters for subclass extension.
         
         """   
-        # apply the operator
-        raise Exception( "Error: applyLeft() method of %s is Undefined."%(self.name)) 
+        wfout    = wfin.copy()
+        wfout[:] = 0.0 
+        for Op in self.op_list:
+            wfout += Op.applyLeft(wfin, **kwds)
         return wfout
+
 
     def write_info(self, indent = 0):
         from functools import partial
