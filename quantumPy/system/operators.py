@@ -280,4 +280,24 @@ class Kinetic(Laplacian):
     def applyRight(self,wfinR): 
         return 0.5*super(Kinetic,self).applyRight(wfinR)
     
+
+#############################################
+#
+#############################################
+class Hamiltonian(Operator):
+    """Hamiltonian operator.
+    
+    Utility class to create an Hamiltonian.
+    
+    Attributes
+    ----------
+    time : float
+        Current time. Used when a time-dependent term is included.
+    
+    """
+    def __init__(self, **kwds):
+        super(Hamiltonian, self).__init__(**kwds)
+        self.name   = "Hamiltonian"
+        self.symbol = "H"
+        self.time = kwds.get('Time', 0.0)
         
