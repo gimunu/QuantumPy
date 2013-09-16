@@ -1,8 +1,8 @@
 QuantumPy
 =========
 
-Versatile quantum mechanics python package 
+Versatile quantum mechanics python package.
 
 Requirement
 =========
-You must have numPy and sciPy installed.
+It requires numPy and sciPy.
