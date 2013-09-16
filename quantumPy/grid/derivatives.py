@@ -15,6 +15,8 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 # 02110-1301, USA.
 
+from __future__ import division
+
 __all__=['fd_derivative', 'FD_Derivatives']
 
 import numpy as np
@@ -24,21 +26,21 @@ from quantumPy.grid.mesh import Mesh, MeshFunction
 
 
 # Finite differences coefficients weights. Naming convention:
-# (derivative degree)_(dimension)d_(number of points)p_(c center diffs / f forward diffs)
+# (derivative degree)_(number of points)p_(c center diffs / f forward diffs)
 
 _fd_weight = {} 
 
 #centered diffs
 #1st derivative
-_fd_weight['1_1d_3p_c']=[-1./2., 0., 1./2.]
-_fd_weight['1_1d_5p_c']=[1./12., -2./3., 0., 2./3., -1./2.]
-_fd_weight['1_1d_7p_c']=[-1./60., 3./20., -3./4., 0., 3./4., -3./20., -1./60.]
-_fd_weight['1_1d_9p_c']=[-1./280., -4./105., 1./5., -4./5., 0., 4./5., -1./5., 4./105., -1./280.]
+_fd_weight['1_3p_c']=[-1./2., 0., 1./2.]
+_fd_weight['1_5p_c']=[1./12., -2./3., 0., 2./3., -1./2.]
+_fd_weight['1_7p_c']=[-1./60., 3./20., -3./4., 0., 3./4., -3./20., -1./60.]
+_fd_weight['1_9p_c']=[-1./280., -4./105., 1./5., -4./5., 0., 4./5., -1./5., 4./105., -1./280.]
 #2nd derivative
-_fd_weight['2_1d_3p_c']=[1., -2., 1.]
-_fd_weight['2_1d_5p_c']=[-1./12., 4./3., -5./2., 4./3., -1./12.]
-_fd_weight['2_1d_7p_c']=[1./90., -3./20., 3./2., 49./18., 3./2., -3./20., 1./90.]
-_fd_weight['2_1d_7p_c']=[-1./560., 8./315.,-1./5., 8./5., -205./72., 8./5., -1./5., 8./315., -1./560.]
+_fd_weight['2_3p_c']=[1., -2., 1.]
+_fd_weight['2_5p_c']=[-1./12., 4./3., -5./2., 4./3., -1./12.]
+_fd_weight['2_7p_c']=[1./90., -3./20., 3./2., 49./18., 3./2., -3./20., 1./90.]
+_fd_weight['2_7p_c']=[-1./560., 8./315.,-1./5., 8./5., -205./72., 8./5., -1./5., 8./315., -1./560.]
 
 
 class FD_Derivatives(object):
@@ -67,13 +69,13 @@ def fd_derivative(wfin, **kwds):
 
     # Handle exceptions
     if mesh.dim > 1:
-        raise Exception('Unavailable derivative in dimension > 1.')
+        raise NotImplementedError
         
     if 'Cartesian' not in mesh.properties:    
-        raise Exception('Non-cartesian meshes are not supported.')
+        raise NotImplementedError
 
     if 'Uniform' not in mesh.properties:    
-        raise Exception('Non-uniform meshes are not supported.')
+        raise NotImplementedError
 
 
     if   degree < 0:
@@ -88,10 +90,10 @@ def fd_derivative(wfin, **kwds):
         #1D
         n1 = mesh.np
         sp =  order + 1 # number of stencil points
-        stname = '%d_%dd_%dp_c'%(degree, mesh.dim, sp) # pick the appropriate weights   
-        for ii in range(sp/2, n1 - sp/2):
+        stname = '%d_%dp_c'%(degree, sp) # pick the appropriate weights   
+        for ii in range(int(sp/2), n1 - int(sp/2)):
             for jj in range(sp):
-                wfout[ii] += wfin[ii - sp/2 + jj] * _fd_weight[stname][jj]
+                wfout[ii] += wfin[ii - int(sp/2) + jj] * _fd_weight[stname][jj]
         wfout[:] /= mesh.spacing**(degree)        
     else:
         raise Exception('Unavailable derivative of order %s.'%(order))

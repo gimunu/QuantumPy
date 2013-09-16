@@ -50,16 +50,16 @@ class Propagator(Operator):
         self.method = kwds.get('Method', 'exponential')
         
         
-    def applyRigth(self, wfinR, **kwds):
+    def applyRight(self, wfinR, **kwds):
 
         dt   = kwds.get('dt', 0.01)
-        time = kwds.get('time', 0.00)
+        time = kwds.get('time', 0.0)
         
         if   self.method.lower() == "exponential":
             wfout = exp(wfinR, self.H, time, dt)
             
         elif self.method.lower() == "aetrs":
-            print "not implemented"
+            raise NotImplementedError
 
         else:
             raise Exception("unknown option")    
@@ -86,5 +86,5 @@ def exp(wf, Hop, time, dt, order = 5 ):
     for i in range(order):
         Uwf +=  Hwf * (- 1j * dt)**i /factorial(i)
         Hwf = Hop.apply(Hwf)
-
+        
     return Uwf             
