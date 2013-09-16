@@ -23,9 +23,17 @@ import numpy as np
 from quantumPy.base import messages
 from quantumPy.base import types
 
-
+#############################################
+#
+#############################################
 class Mesh(object):
-    """Basic Mesh class"""
+    """Abstract general Mesh class.
+    
+    ...
+    
+    
+    
+    """
     def __init__(self, **kwds):
         super(Mesh, self).__init__()
         
@@ -50,18 +58,26 @@ class Mesh(object):
         printmsg("           points = %d "%(self.np))        
 
 
-
+#############################################
+#
+#############################################
 class MeshFunction(np.ndarray):
     """Subclass of numpy.ndarray specifying a function defined on the mesh.
-       Each instance of the class appends a mesh attribute to an ndarray and must be initialized this way:
-       
-       ar = np.zeros(mesh.np)
-       mf = MeshFunction(ar, mesh = mesh)
-       
-       A instance of the class can also be crated with copy():
-       
-       mf_copy = mf.copy()
-       
+    
+    Each instance of the class appends a mesh attribute to an ndarray and must be initialized this way:
+
+
+    Parameters
+    ----------
+    mesh : Mesh 
+       A instance of Mesh.
+
+    Examples
+    --------
+    >>> a = np.zeros(mesh.np)
+    >>> mf = MeshFunction(a, mesh = mesh)
+    A instance of the class can also be crated with copy():
+    >>> mf_cpy = mf.copy()       
     """
     
     def __new__(cls, input_array, mesh=None):
