@@ -24,8 +24,8 @@ from scipy import fftpack
 from quantumPy.base import messages
 from quantumPy.base.math import rs_to_fs, fs_to_rs
 from quantumPy.grid.mesh import Mesh, MeshFunction
-from quantumPy.grid.box  import Cube, Box
-from quantumPy.grid.box  import mesh_to_cube, cube_to_mesh
+from quantumPy.grid.mesh import Cube, Box
+from quantumPy.grid.mesh import mesh_to_cube, cube_to_mesh
 from quantumPy.grid.derivatives import fd_derivative
 
 printmsg = messages.print_msg  #shorter name     

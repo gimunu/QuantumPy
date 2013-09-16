@@ -20,7 +20,7 @@ from __future__ import division
 __all__=['rs_to_fs', 'fs_to_rs']
 
 from quantumPy.grid.mesh import Mesh, MeshFunction
-from quantumPy.grid.box  import Cube, mesh_to_cube, cube_to_mesh
+from quantumPy.grid.mesh import Cube, mesh_to_cube, cube_to_mesh
 
 import numpy as np
 from scipy.fftpack import fft, ifft, fftshift, ifftshift
