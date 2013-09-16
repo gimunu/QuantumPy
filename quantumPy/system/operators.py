@@ -91,7 +91,7 @@ class Operator(object):
             Optional additional parameters. This allow a subclass to extend the method.
         
         """
-        return  self.applyRigth(wfin, **kwds)
+        return  self.applyRight(wfin, **kwds)
 
     def expectationValue(self, wfR, wfL = None, **kwds):
         """ Calculate the expectation value of the operator.
@@ -112,12 +112,12 @@ class Operator(object):
         if wfL == None:
             wfL = wfR.copy().conjugate()
 
-        out = (wfL * self.applyRigth(wfR, **kwds)).integrate()
+        out = (wfL * self.applyRight(wfR, **kwds)).integrate()
 
         return out 
         
         
-    def applyRigth(self, wfin, **kwds): 
+    def applyRight(self, wfin, **kwds): 
         """Operator right action.
         
         Compose the right action by sequentially applying all the operators in the 
@@ -134,7 +134,7 @@ class Operator(object):
         wfout    = wfin.copy()
         wfout[:] = 0.0 
         for Op in self.op_list:
-            wfout += Op.applyRigth(wfin, **kwds)
+            wfout += Op.applyRight(wfin, **kwds)
         return wfout
 
     def applyLeft(self, wfin, **kwds):    
@@ -182,7 +182,7 @@ class Identity(Operator):
         self.symbol  = 'I'
         self.formula = '1'
         
-    def applyRigth(self, wfinR): 
+    def applyRight(self, wfinR): 
         return wfinR
 
     def applyLeft(self, wfinL): 
@@ -232,7 +232,7 @@ class Laplacian(Operator):
         if self.fdorder:
             print_msg( "f.d. order = %d   (%d-points stencil)"%(self.fdorder, self.fdorder+1), indent = indent+2)
                 
-    def applyRigth(self,wfinR):
+    def applyRight(self,wfinR):
         
         wfout = wfinR.copy()
         
@@ -260,7 +260,7 @@ class Laplacian(Operator):
         return wfout
          
     def applyLeft(self,wfinL):
-        return self.applyRigth(wfinL.conjugate())      
+        return self.applyRight(wfinL.conjugate())      
              
 
 
@@ -276,7 +276,7 @@ class Kinetic(Laplacian):
         self.symbol  = 'T'
         self.formula = '1/2 \\nabla^2'
         
-    def applyRigth(self,wfinR): 
-        return 0.5*super(Kinetic,self).applyRigth(wfinR)
+    def applyRight(self,wfinR): 
+        return 0.5*super(Kinetic,self).applyRight(wfinR)
     
         

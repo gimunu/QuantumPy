@@ -98,7 +98,7 @@ for i in range(0,nt):
     
 
 
-if True:
+if False:
     pl.rc('font', family='serif')
     pl.rc('font', size=12)
     pl.rc('legend', fontsize=10)
