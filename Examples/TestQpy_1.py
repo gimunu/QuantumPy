@@ -28,7 +28,8 @@ from quantumPy import *
 
 # First Create the box
 # By default the dimensionality is set to 1 
-box = qp.grid.Box(shape = 'Sphere', radius = 10.0, spacing = 0.1)
+Radius = 5.0
+box = qp.grid.Box(shape = 'Sphere', radius = Radius, spacing = 0.1)
 box.write_info() # Write a detailed description of the box
 
 # Create an empty  MeshFunction living on the box
@@ -47,7 +48,6 @@ wf = qp.grid.MeshFunction( np.pi**(-1.0/4.0) * sigma**(-1.0/2.0) *
 
 # Create a Laplace operator
 Lap = qp.system.Laplacian(box)
-print "<K> = %s" % (Lap.expectationValue(wf))
 
 # Create the kinetic operator 
 # T = qp.system.Kinetic(box, Strategy = 'Fourier')
@@ -76,25 +76,39 @@ OP = qp.system.Operator(Operators = [T,T,Lap])
 OP.write_info()
 
 
+
+
 # Time propagation
 # Create the evolution operator
 U = qp.td.Propagator(H)
 U.write_info()
 
-nt = 10
-dt = 0.001
+nt = 200
+dt = 0.005
 
 wft = wf.copy()
+
+anim = 1
+if anim:
+    pl.ion()
+    line, =pl.plot(wft.mesh.points, (wft.conjugate()*wft).real)
+    line.axes.set_xlim(-Radius,Radius) 
+    pl.draw()
+
+
 print "i        t              <E>"
 # time-evolution loop
 for i in range(0,nt):
     wft = U.apply(wft, dt = dt)         # Apply the propagator
     E   = U.H.expectationValue(wft)     # Calculate the energy
     print "%d\t %1.4f \t%f"%(i, i*dt, E.real)
+    if anim:
+        line.set_ydata((wft.conjugate()*wft).real)
+        pl.draw()
+
     
 
-
-if False:
+if 0:
     pl.rc('font', family='serif')
     pl.rc('font', size=12)
     pl.rc('legend', fontsize=10)
@@ -116,3 +130,5 @@ if False:
     p2.legend()
 
     pl.show()   
+
+
