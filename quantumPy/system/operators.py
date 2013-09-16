@@ -90,6 +90,11 @@ class Operator(object):
             Function acting from the right.
         **kwds : dictionary
             Optional additional parameters. This allow a subclass to extend the method.
+            
+        Returns
+        -------    
+        wfout: MeshFunction
+            The function resulting from the operator application.
         
         """
         return  self.applyRight(wfin, **kwds)
@@ -107,6 +112,11 @@ class Operator(object):
             Function acting from the left.
         **kwds : dictionary
             Optional parameters for subclass extension.
+        
+        Returns
+        -------    
+        out: complex 
+            The operator expectation value.
         
         """
         
@@ -130,6 +140,11 @@ class Operator(object):
             Function acting from the right.
         **kwds : dictionary
             Optional parameters for subclass extension.
+
+        Returns
+        -------    
+        wfout: MeshFunction
+            The function resulting from the right operator application.
         
         """   
         wfout    = wfin.copy()
@@ -150,6 +165,11 @@ class Operator(object):
             Function acting from the left.
         **kwds : dictionary
             Optional parameters for subclass extension.
+        
+        Returns
+        -------    
+        wfout: MeshFunction
+            The function resulting from the left operator application.
         
         """   
         wfout    = wfin.copy()
