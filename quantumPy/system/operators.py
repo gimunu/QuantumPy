@@ -15,6 +15,9 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 # 02110-1301, USA.
 
+
+__all__ = ['Operator', 'Laplacian', 'Kinetic', 'Identity']
+
 import numpy as np
 from scipy import fftpack
 from quantumPy.base import messages
@@ -31,7 +34,7 @@ printmsg = messages.print_msg  #shorter name
 #
 #############################################
 class Operator(object):
-    """Generic operator acting on a MeshFunction.
+    """Abstract general low-level operator acting on a MeshFunction.
     
     ...
     

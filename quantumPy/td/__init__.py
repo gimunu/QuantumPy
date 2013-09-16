@@ -15,6 +15,10 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 # 02110-1301, USA.
 
-from evolution import Propagator
 
-__all__ = ['evolution']
+# Merge the public interface of all submodules.
+__all__ = []
+for module in ['evolution']:
+    exec 'from . import {0}'.format(module)
+    exec 'from .{0} import *'.format(module)
+    exec '__all__.extend({0}.__all__)'.format(module)

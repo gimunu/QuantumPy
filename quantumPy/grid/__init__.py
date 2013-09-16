@@ -15,9 +15,12 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 # 02110-1301, USA.
 
-from mesh import Mesh, MeshFunction
-from box  import Box, Cube
-from box  import mesh_to_cube, cube_to_mesh
-from derivatives import fd_derivative
 
-__all__ = ['mesh', 'box', 'derivatives']
+
+# Merge the public interface of all submodules.
+__all__ = []
+for module in ['mesh', 'box', 'derivatives']:
+    exec 'from . import {0}'.format(module)
+    exec 'from .{0} import *'.format(module)
+    exec '__all__.extend({0}.__all__)'.format(module)
+

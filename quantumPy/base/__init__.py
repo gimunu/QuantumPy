@@ -16,8 +16,9 @@
 # 02110-1301, USA.
 
 
-from messages import print_msg
-from math     import rs_to_fs, fs_to_rs
-from types    import *
-
-__all__ = ['messages', 'math', 'types']
+# Merge the public interface of all submodules.
+__all__ = []
+for module in ['messages', 'math', 'types']:
+    exec 'from . import {0}'.format(module)
+    exec 'from .{0} import *'.format(module)
+    exec '__all__.extend({0}.__all__)'.format(module)

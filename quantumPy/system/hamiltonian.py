@@ -15,6 +15,8 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 # 02110-1301, USA.
 
+__all__ = ['Hamiltonian']
+
 import numpy as np
 from quantumPy.base import messages
 from quantumPy.base.math import rs_to_fs, fs_to_rs

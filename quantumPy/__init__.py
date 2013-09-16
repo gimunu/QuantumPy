@@ -18,3 +18,6 @@
 import numpy as np
 
 __all__ = ['base','grid','system','td']
+
+for module in __all__:
+    exec 'from . import {0}'.format(module)
