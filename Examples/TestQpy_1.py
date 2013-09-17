@@ -29,7 +29,7 @@ from quantumPy import *
 # First Create the box
 # By default the dimensionality is set to 1 
 Radius = 5.0
-box = qp.grid.Box(shape = 'Sphere', radius = Radius, spacing = 0.1)
+box = qp.Box(shape = 'Sphere', radius = Radius, spacing = 0.1)
 box.write_info() # Write a detailed description of the box
 
 # Create an empty  MeshFunction living on the box
@@ -47,7 +47,8 @@ wf = qp.grid.MeshFunction( np.pi**(-1.0/4.0) * sigma**(-1.0/2.0) *
 
 
 # Create a Laplace operator
-Lap = qp.system.Laplacian(box)
+Grad = qp.system.Gradient(box, Strategy = 'fs', Bc = 'periodic')
+print "<P> = %s" % (Grad.expectationValue(wf))
 
 # Create the kinetic operator 
 # T = qp.system.Kinetic(box, Strategy = 'Fourier')
@@ -72,7 +73,7 @@ print "Ek = %s"%(E)
 
 
 # Test operator composition
-OP = qp.system.Operator(Operators = [T,T,Lap])
+OP = qp.system.Operator(Operators = [T,T,Grad])
 OP.write_info()
 
 
@@ -83,12 +84,13 @@ OP.write_info()
 U = qp.td.Propagator(H)
 U.write_info()
 
-nt = 200
+nt = 2
 dt = 0.005
+# dt = 1j * 0.005
 
 wft = wf.copy()
 
-anim = 1
+anim = 0
 if anim:
     pl.ion()
     line, =pl.plot(wft.mesh.points, (wft.conjugate()*wft).real)
@@ -101,7 +103,7 @@ print "i        t              <E>"
 for i in range(0,nt):
     wft = U.apply(wft, dt = dt)         # Apply the propagator
     E   = U.H.expectationValue(wft)     # Calculate the energy
-    print "%d\t %1.4f \t%f"%(i, i*dt, E.real)
+    print "%d\t %1.4f \t%f"%(i, i*dt.real, E.real)
     if anim:
         line.set_ydata((wft.conjugate()*wft).real)
         pl.draw()
