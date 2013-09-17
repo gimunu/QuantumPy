@@ -42,6 +42,8 @@ class Operator(object):
         Operator formula (LaTeX format).
     hermitian : bool
         Whether the operator is Hermitian or not.
+    [R,L]action : callable
+        The right (left) action.
     op_list : list of Operator instances
         A list of operators composing the operator.
     
@@ -54,6 +56,10 @@ class Operator(object):
         self.hermitian = kwds.get('hermitian', True)
         
         self.op_list = kwds.get('Operators', [])
+        
+        self.raction = kwds.get('Raction', None)
+        self.laction = kwds.get('Laction', self.raction)
+            
         
         self.update()
         
@@ -142,8 +148,13 @@ class Operator(object):
         """   
         wfout    = wfin.copy()
         wfout[:] = 0.0 
-        for Op in self.op_list:
-            wfout += Op.applyRight(wfin, **kwds)
+
+        if self.raction != None:
+            wfout = self.raction(wfin, **kwds)
+        else:
+            for Op in self.op_list:
+                wfout += Op.applyRight(wfin, **kwds)
+        
         return wfout
 
     def applyLeft(self, wfin, **kwds):    
@@ -167,8 +178,12 @@ class Operator(object):
         """   
         wfout    = wfin.copy()
         wfout[:] = 0.0 
-        for Op in self.op_list:
-            wfout += Op.applyLeft(wfin, **kwds)
+        if self.laction != None:
+            wfout = self.laction(wfin, **kwds)
+        else:
+            for Op in self.op_list:
+                wfout += Op.applyLeft(wfin, **kwds)
+        
         return wfout
 
 
@@ -228,7 +243,6 @@ class Laplacian(Operator):
     """Laplacian operator"""
     def __init__(self, mesh, **kwds):
         super(Laplacian, self).__init__(**kwds)
-        self.mesh = mesh
         
         self.name    = 'Laplacian'
         self.symbol  = '\\nabla^2'
@@ -238,57 +252,18 @@ class Laplacian(Operator):
         if mesh.dim > 2:
             self.formula += '+ d^2/dz^2' 
         
-        self.strategy = kwds.get('Strategy', 'finite difference')
-
-        self.boundary = kwds.get('Boundary', 'zero')
+        self.der = kwds.get('Der', Derivative(mesh, **kwds)) 
         
-        self.cube = None # A cube mesh to perform FFTs
-        self.fdorder = None
-        if (self.strategy.lower() == 'fourier'):
-            self.cube = Cube(self.mesh, Attributes = 'RS + FS')
-        elif (self.strategy.lower() == 'finite difference'):
-            self.fdorder = kwds.get('FDorder', 4)
-
-
-    def write_info(self, indent = 0):        
-        super(Laplacian,self).write_info(indent)
-        print_msg( "strategy  = %s "%(self.strategy), indent = indent+1)
-        
-        if (self.cube != None):
-            self.cube.write_info(indent = indent+2)
-        
-        if self.fdorder:
-            print_msg( "f.d. order = %d   (%d-points stencil)"%(self.fdorder, self.fdorder+1), indent = indent+2)
                 
-    def applyRight(self,wfinR):
-        
-        wfout = wfinR.copy()
-        
-        if   self.strategy.lower() == 'finite difference':
-            #do something
-            # wfout = np.gradient(np.gradient(wfinR, wfinR.mesh.spacing), wfinR.mesh.spacing)
-            wfout = fd_derivative(wfinR, Degree = 2, Order = self.fdorder)
-            
-        elif self.strategy.lower() == 'fourier': 
-            # Use derivatives in Fourier space F(f'(x))=ik f(k), 
-            # hence:
-            # \Nabla^2 = F^{-1}(-k^2 F(f(x)))
-            
-            cf = mesh_to_cube(wfinR, self.cube)
-            Fcf = rs_to_fs(cf)
-            K = Fcf.mesh.FSpoints        
-            cf = fs_to_rs(K**2.0 * Fcf)
-            wfout = cube_to_mesh(cf, wfinR.mesh)
-
-            # fftpack.diff(wfinR, order=2, period=np.abs(self.cube.RSsize[1]-self.cube.RSsize[0]) )
-            
-        else:
-            raise Exception("Unrecognized option")
-         
-        return wfout
+    def applyRight(self,wfinR):        
+        return self.der.perform(wfinR, degree = 1)
          
     def applyLeft(self,wfinL):
         return self.applyRight(wfinL.conjugate())      
+
+    def write_info(self, indent = 0):        
+        super(Laplacian,self).write_info(indent)
+        self.der.write_info(indent = indent)
              
 
 
