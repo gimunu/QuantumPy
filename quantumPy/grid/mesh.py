@@ -27,10 +27,9 @@ from quantumPy.base import types
 #
 #############################################
 class Mesh(object):
-    """Abstract general Mesh class.
+    """General Mesh class.
     
     ...
-    
     
     
     """
@@ -64,9 +63,8 @@ class Mesh(object):
 class MeshFunction(np.ndarray):
     """Subclass of numpy.ndarray specifying a function defined on the mesh.
     
-    Each instance of the class appends a mesh attribute to an ndarray and must be initialized this way:
-
-
+    ...
+    
     Parameters
     ----------
     mesh : Mesh 
@@ -74,6 +72,7 @@ class MeshFunction(np.ndarray):
 
     Examples
     --------
+    Each instance of the class appends a mesh attribute to an ndarray and must be initialized this way:
     >>> a = np.zeros(mesh.np)
     >>> mf = MeshFunction(a, mesh = mesh)
     A instance of the class can also be crated with copy():
@@ -213,6 +212,7 @@ def cube_to_mesh(cf, mesh):
 
 class Cube(Mesh):
     """A cubic mesh. 
+    
        This is a special mesh used for convenience operations such as write 3D wfs on a file 
        and perform FFTs.
        It is bound to a specific Mesh instance from which back and forth maps are defined. 
