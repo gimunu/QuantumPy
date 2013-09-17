@@ -20,8 +20,9 @@ from __future__ import division
 __all__=['Mesh', 'MeshFunction','Box', 'Cube', 'mesh_to_cube', 'cube_to_mesh']
 
 import numpy as np
-from quantumPy.base import messages
-from quantumPy.base import types
+from ..base.messages import *
+from ..base import types
+
 
 #############################################
 #
@@ -46,11 +47,11 @@ class Mesh(object):
         """Refresh all the data-dependent values after a change"""
         self.np = self.points.size 
     
-    def write_info(self, indent):
+    def write_info(self, indent = 0):
         from functools import partial
 
-        printmsg = partial(messages.print_msg, indent = indent)       
-        printmsg = messages.print_msg        
+        printmsg = partial(print_msg, indent = indent)       
+        # printmsg = messages.print_msg        
         printmsg("Mesh info: " )
         printmsg("       properties = %s "%(self.properties))        
         printmsg("       dimensions = %d "%(self.dim))        
@@ -95,6 +96,8 @@ class MeshFunction(np.ndarray):
 
     def integrate(self, Region = None):
         """ Performs the integration of the function on the underlying mesh.
+        
+        
             The integration is by default on the full mesh where the function is defined,
             an optional sub-mesh domain can be entered with the Region option. 
         """
@@ -152,7 +155,7 @@ class Box(Mesh):
         
     def write_info(self, indent = 0):
         from functools import partial
-        printmsg = partial(messages.print_msg, indent = indent)       
+        printmsg = partial(print_msg, indent = indent)       
          
         printmsg( "Box info: " )       
         printmsg( "            shape = %s "%(self.shape))
@@ -264,7 +267,7 @@ class Cube(Mesh):
 
     def write_info(self, indent = 0):
         from functools import partial
-        printmsg = partial(messages.print_msg, indent = indent)       
+        printmsg = partial(print_msg, indent = indent)       
 
         printmsg("Cube info: " )
         printmsg("       attributes = %s "%(self.attributes)) 

@@ -17,14 +17,11 @@
 
 __all__=['Propagator']
 
-from quantumPy.base      import messages
-from quantumPy.grid      import mesh
-from quantumPy.system    import hamiltonian
-from quantumPy.system.hamiltonian  import Operator
+from ..base import *
+from ..grid import *
+from ..system import *
 
 from scipy.misc import factorial
-
-printmsg = messages.print_msg  #shorter name         
 
 class Propagator(Operator):
     """Infinitesimal time propagation operator.
@@ -67,11 +64,7 @@ class Propagator(Operator):
         return wfout    
 
     def write_info(self, indent = 0): 
-        from functools import partial
-        printmsg = partial(messages.print_msg, indent = indent)       
-        print_msg = messages.print_msg    
-           
-        printmsg( "%s (%s): "%(self.name, self.symbol) )       
+        print_msg( "%s (%s): "%(self.name, self.symbol), indent = indent )       
         print_msg("%s = %s "%(self.symbol, self.formula), indent = indent+1)    
         print_msg("method = %s"%(self.method), indent = indent+1)  
         self.H.write_info(indent = indent+1)
