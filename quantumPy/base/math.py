@@ -19,8 +19,7 @@ from __future__ import division
 
 __all__=['rs_to_fs', 'fs_to_rs']
 
-from quantumPy.grid.mesh import Mesh, MeshFunction
-from quantumPy.grid.mesh import Cube, mesh_to_cube, cube_to_mesh
+from ..grid import * 
 
 import numpy as np
 from scipy.fftpack import fft, ifft, fftshift, ifftshift
@@ -30,11 +29,27 @@ from scipy.fftpack import fft, ifft, fftshift, ifftshift
 #Note: this code is 1D only (for now)
 def rs_to_fs(wfin, cube_in = None):
     """ Transform a real-space mesh-function into Fourier-space.
-        The interface is quite flexible as is accepts both mesh-functions and cube-functions.
-        The output function is always a cube-function (i.e. mesh-function defined on the 
-        special mesh Cube).
-        Since the FFTs are always performed on cube-functions  a mapping is involved.
-        An optional cubic mesh can be specified by setting cube_in."""
+    
+    Parameters
+    ----------
+    wfin: MeshFunction
+        The wavefunction to transfom.
+    cube_in: Cube (default None)
+        Optional Cube mesh to be used to perform FFTs.
+        
+    Returns
+    -------
+    wfout: MeshFunction
+        A function defined on the Cube mapping to the underlying Mesh of wfin.
+    
+    Notes
+    -----
+    The interface is quite flexible as is accepts both mesh-functions and cube-functions.
+    The output function is always a cube-function (i.e. mesh-function defined on the 
+    special mesh Cube).
+    Since the FFTs are always performed on cube-functions  a mapping is involved.
+    An optional cubic mesh can be specified by setting cube_in.
+    """
 
     #check whether the possible cube-mesh candidates are indeed Cube instances
     # and whether the cube Fourier-space (FS) has been initialized 
