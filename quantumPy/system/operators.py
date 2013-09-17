@@ -20,7 +20,6 @@ from __future__ import division
 __all__ = ['Operator', 'Laplacian', 'Gradient', 'Kinetic', 'Identity']
 
 import numpy as np
-from scipy import fftpack
 from ..base import *
 from ..grid import *
 

@@ -18,7 +18,7 @@
 __all__=['Propagator']
 
 from ..base import *
-from ..grid import *
+from ..grid.mesh import *
 from ..system import *
 
 from scipy.misc import factorial

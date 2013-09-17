@@ -15,14 +15,20 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 # 02110-1301, USA.
 
+
 from __future__ import division
 
 __all__=['rs_to_fs', 'fs_to_rs']
 
-from ..grid import * 
+from ..grid.mesh import * 
 
 import numpy as np
 from scipy.fftpack import fft, ifft, fftshift, ifftshift
+
+
+#########################################
+#
+#########################################
 
 
 #FFTs wrappers    
