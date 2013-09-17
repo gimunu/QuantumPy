@@ -22,7 +22,7 @@ from __future__ import division
 __all__=['fd_derivative', 'Derivative']
 
 import numpy as np
-from ..base import *
+from . import *
 from ..grid.mesh import * 
 # from ..base import math
 
@@ -96,9 +96,9 @@ class Derivative(object):
             raise NotImplementedError
 
         cf = mesh_to_cube(wfin, self.cube)
-        # Fcf = rs_to_fs(cf)
-        # K = Fcf.mesh.FSpoints        
-        # cf = fs_to_rs((- 1j * K)**degree * Fcf)
+        Fcf = rs_to_fs(cf)
+        K = Fcf.mesh.FSpoints        
+        cf = fs_to_rs((- 1j * K)**degree * Fcf)
         wfout = cube_to_mesh(cf, wfin.mesh)
         
         return wfout
