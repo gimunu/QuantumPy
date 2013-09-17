@@ -23,8 +23,10 @@ import pylab as pl
 import scipy as sp
 import pylab as pl
 
+import sys
+sys.path.append('../')
+
 import quantumPy as qp
-from quantumPy import *
 
 # First Create the box
 # By default the dimensionality is set to 1 

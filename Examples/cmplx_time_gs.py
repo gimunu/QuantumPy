@@ -24,6 +24,9 @@ import pylab as pl
 import scipy as sp
 import pylab as pl
 
+import sys
+sys.path.append('../')
+
 import quantumPy as qp
 
 # First Create the box
@@ -33,7 +36,7 @@ box = qp.Box(shape = 'Sphere', radius = Radius, spacing = 0.2)
 box.write_info() # Write a detailed description of the box
 
 # Create an empty  MeshFunction living on the box
-array = np.zeros(box.np)
+array = np.zeros(box.np, dtype=complex)
 wf = qp.grid.MeshFunction( array, mesh = box)
 
 # Create a gaussian wave-packet with initial velocity k
@@ -43,7 +46,7 @@ sigma = np.sqrt(2.0)/k
 # wf = qp.grid.MeshFunction( np.pi**(-1.0/4.0) * sigma**(-1.0/2.0) *  
 #                            np.exp(-X[:]**2.0 / (2.0*sigma**2.0) + 1j*k*X[:]) , mesh = box)
 
-wf[:] = 1.0 + 1j 
+wf[:] = 1.0  
 
 
 def vext(x):
@@ -59,7 +62,7 @@ Vext.name ='External potential'
 Vext.symbol ='Vext'
 Vext.formula ='1/2 \omega^2 x^2'
 
-T = qp.system.operators.Kinetic(box)
+T = qp.system.operators.Kinetic(box, Strategy = 'fs', Bc = 'periodic')
 
 
 H = qp.system.operators.Hamiltonian(Operators = [T, Vext])
@@ -73,7 +76,7 @@ print "<Vext> = %s" % (Vext.expectationValue(wf))
 U = qp.td.Propagator(H)
 U.write_info()
 
-nt = 500
+nt = 1000
 # dt = 0.005
 dt = -1j * 0.001
 
@@ -93,7 +96,8 @@ print "i        t              <E>"
 # time-evolution loop
 for i in range(0,nt):
     wft = U.apply(wft, dt = dt)         # Apply the propagator
-    wft /= np.sqrt((wf*wf.conjugate()).integrate().real)
+    norm2 =  (wft*wft.conjugate()).integrate().real
+    wft /= np.sqrt(norm2)
     E   = U.H.expectationValue(wft)     # Calculate the energy
     v1 = U.H.op_list[0].expectationValue(wft)
     v2 = U.H.op_list[1].expectationValue(wft)
