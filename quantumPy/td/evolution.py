@@ -71,7 +71,7 @@ class Propagator(Operator):
         
 
 
-def exp(wf, Hop, time, dt, order = 5 ): 
+def exp(wf, Hop, time, dt, order = 4 ): 
     """ Exponential operator """
     Hwf = wf
     Uwf = wf.copy()
