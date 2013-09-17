@@ -17,25 +17,19 @@
 
 from __future__ import division
 
-__all__ = ['Operator', 'Laplacian', 'Kinetic', 'Identity']
+__all__ = ['Operator', 'Laplacian', 'Gradient', 'Kinetic', 'Identity']
 
 import numpy as np
 from scipy import fftpack
-from quantumPy.base import messages
-from quantumPy.base.math import rs_to_fs, fs_to_rs
-from quantumPy.grid.mesh import Mesh, MeshFunction
-from quantumPy.grid.mesh import Cube, Box
-from quantumPy.grid.mesh import mesh_to_cube, cube_to_mesh
-from quantumPy.grid.derivatives import fd_derivative
-
-printmsg = messages.print_msg  #shorter name     
+from ..base import *
+from ..grid import *
 
 
 #############################################
 #
 #############################################
 class Operator(object):
-    """Abstract general low-level operator acting on a MeshFunction.
+    """General low-level operator acting on a MeshFunction.
     
     ...
     
@@ -180,11 +174,7 @@ class Operator(object):
 
 
     def write_info(self, indent = 0):
-        from functools import partial
-        printmsg = partial(messages.print_msg, indent = indent)       
-        print_msg = messages.print_msg    
-        
-        printmsg( "%s operator (%s): "%(self.name, self.symbol) )       
+        print_msg( "%s operator (%s): "%(self.name, self.symbol), indent = indent )       
         if self.formula != None:
             print_msg( "%s = %s "%(self.symbol, self.formula), indent = indent+1)    
         # Write details of all the composing ops
@@ -208,6 +198,28 @@ class Identity(Operator):
 
     def applyLeft(self, wfinL): 
         return wfinL
+
+#############################################
+#
+#############################################
+class Gradient(Operator):
+    """Gradient operator"""
+    def __init__(self, mesh, **kwds):
+        super(Gradient, self).__init__(**kwds)
+        self.name    = 'Gradient'
+        self.symbol  = '\\nabla'
+        self.formula = 'd/dx'
+        
+        self.der = kwds.get('Der', Derivative(mesh, **kwds)) 
+        
+    def applyRight(self, wfinR): 
+        return self.der.perform(wfinR, degree = 1)
+
+
+    def write_info(self, indent = 0):
+        super(Gradient,self).write_info(indent = indent)
+        self.der.write_info(indent = indent)
+        
 
 
 #############################################
@@ -239,11 +251,7 @@ class Laplacian(Operator):
             self.fdorder = kwds.get('FDorder', 4)
 
 
-    def write_info(self, indent = 0):
-        from functools import partial
-        printmsg = partial(messages.print_msg, indent = indent)       
-        print_msg = messages.print_msg       
-        
+    def write_info(self, indent = 0):        
         super(Laplacian,self).write_info(indent)
         print_msg( "strategy  = %s "%(self.strategy), indent = indent+1)
         
@@ -297,7 +305,7 @@ class Kinetic(Laplacian):
         self.symbol  = 'T'
         self.formula = '1/2 \\nabla^2'
         
-    def applyRight(self,wfinR): 
+    def applyRight(self, wfinR): 
         return 0.5*super(Kinetic,self).applyRight(wfinR)
     
 
