@@ -23,7 +23,7 @@ for module in __all__:
     exec 'from . import {0}'.format(module)
 
 # Make selected functionality available directly in the root namespace.
-available = [('system.operators', ['Operator', 'Hamiltonian']),
+available = [('system.operators', system.operators.__all__),
              ('grid.mesh', ['Box']), 
              ('td.evolution', ['Propagator'])]
 for module, names in available:
