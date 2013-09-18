@@ -27,6 +27,16 @@ from .base import *
 from .grid import *
 
 
+
+# Flatten nested lists
+def flatten(*args):
+    for x in args:
+        if hasattr(x, '__iter__'):
+            for y in flatten(*x):
+                yield y
+        else:
+            yield x
+
 #############################################
 #
 #############################################
@@ -198,6 +208,18 @@ class Operator(object):
         
         return wfout
 
+    def __add__(self, other):
+        Op = Operator()
+        Op.name    = 'Composed Operator'
+        Op.symbol  = 'O'
+        Op.formula = self.symbol + ' + ' + other.symbol
+        Op.op_list.append(self  if not self.op_list  else self.op_list)
+        Op.op_list.append(other if not other.op_list else other.op_list)
+        Op.op_list=list(flatten(Op.op_list))
+        Op.update()
+        
+        return Op
+                
 
     def write_info(self, indent = 0):
         print_msg( "%s operator (%s): "%(self.name, self.symbol), indent = indent )       
