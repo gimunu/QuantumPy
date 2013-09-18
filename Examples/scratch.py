@@ -57,7 +57,12 @@ T = qp.Kinetic(box, Strategy = 'fd', Order = 1, Bc = 'periodic')
 #
 # The Hamiltonian
 #
-H = qp.Hamiltonian(Operators = [T, Vext])
+# H = qp.Hamiltonian(Operators = [T, Vext])
+
+H = T + Vext + Vext
+H.write_info()
+print H.op_list
+exit()
 
 #################################################
 # Imaginary-time propagation
@@ -67,10 +72,7 @@ U = qp.td.Propagator(H)
 # U = qp.exponential(H)
 U.write_info()
 
-# imaginary time-step
 dtau = -1j * 0.007 
-
-# Energy threshold
 Eth = 1e-6
 
 # Create an empty  MeshFunction 
@@ -79,8 +81,6 @@ wft = qp.grid.MeshFunction( array, mesh = box)
 
 wft = qp.grid.MeshFunction( np.random.rand(box.np)+0.j, mesh = box)
 
-# wft = np.random.rand(box.np)  # The initial guess 
-# wft[:] = 1.0  # The initial guess 
 
 anim = 1
 if anim:
