@@ -67,7 +67,9 @@ class Operator(object):
         self.update()
     
     def action(self, funct, key = 'LR'):
-        
+        """Define Operator action.
+         
+        """
         if (key =='LR'):
             self.raction = funct
             self.laction = funct
@@ -88,6 +90,7 @@ class Operator(object):
         dependencies.
         
         """
+        self.hermitian = (self.raction == self.laction)
         
         # Generate a formula representation
         if len(self.op_list) > 0:
