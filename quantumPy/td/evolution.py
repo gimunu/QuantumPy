@@ -17,6 +17,7 @@
 
 __all__=['Propagator']
 
+import numpy as np
 from ..base import *
 from ..grid.mesh import *
 from ..system import *
@@ -55,7 +56,7 @@ class Propagator(Operator):
         if   self.method.lower() == "exponential":
             wfout = exp(wfinR, self.H, time, dt)
             
-        elif self.method.lower() == "aetrs":
+        elif self.method.lower() == "split":
             raise NotImplementedError
 
         else:
@@ -74,7 +75,7 @@ class Propagator(Operator):
 def exp(wf, Hop, time, dt, order = 4 ): 
     """ Exponential operator """
     Hwf = wf
-    Uwf = wf.copy()
+    Uwf = MeshFunction(np.zeros(wf.mesh.np, dtype = complex), wf.mesh)
     Uwf[:] = 0.0
     for i in range(order):
         Uwf +=  Hwf * (- 1j * dt)**i /factorial(i)
