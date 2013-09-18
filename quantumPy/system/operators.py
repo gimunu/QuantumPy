@@ -17,9 +17,12 @@
 
 from __future__ import division
 
-__all__ = ['Operator', 'Laplacian', 'Gradient', 'Kinetic', 'Identity', 'Hamiltonian']
+__all__ = ['Operator', 'Laplacian', 'Gradient', 'Kinetic', 'identity',
+           'scalar_pot' , 'Hamiltonian', 'exponential']
 
+import inspect
 import numpy as np
+from scipy.misc import factorial
 from ..base import *
 from ..grid import *
 
@@ -50,16 +53,16 @@ class Operator(object):
     """
     def __init__(self, **kwds):
         super(Operator, self).__init__()        
-        self.name   = kwds.get('name', "Operator")
-        self.symbol = kwds.get('symbol', "Op")
+        self.name    = kwds.get('name'   , "Operator")
+        self.symbol  = kwds.get('symbol' , "Op")
         self.formula = kwds.get('formula', self.symbol)
-        self.hermitian = kwds.get('hermitian', True)
+        self.info    = kwds.get('info'   , None)
         
         self.op_list = kwds.get('Operators', [])
         
-        self.raction = kwds.get('Raction', None)
-        self.laction = kwds.get('Laction', self.raction)
-            
+        self.hermitian = True
+        self.raction = None
+        self.laction = None
         
         self.update()
     
@@ -81,9 +84,12 @@ class Operator(object):
     def update(self):
         """Update the internal attributes.
         
-        This method should be called in order to regenerate all the internal attribute dependencies.
+        This method should be called in order to regenerate all the internal attribute
+        dependencies.
         
         """
+        
+        # Generate a formula representation
         if len(self.op_list) > 0:
             self.formula = ''
         
@@ -206,6 +212,8 @@ class Operator(object):
         print_msg( "%s operator (%s): "%(self.name, self.symbol), indent = indent )       
         if self.formula != None:
             print_msg( "%s = %s "%(self.symbol, self.formula), indent = indent+1)    
+        if self.info != None:
+            print_msg( "info: %s "%(self.info), indent = indent+1)    
         # Write details of all the composing ops
         for Op in self.op_list:
             Op.write_info(indent = indent+1)
@@ -215,20 +223,111 @@ class Operator(object):
 #  Library of operators
 #############################################
 
-#############################################
-class Identity(Operator):
-    """Identity operator"""
-    def __init__(self, **kwds):
-        super(Identity, self).__init__(**kwds)
-        self.name    = 'Identity'
-        self.symbol  = 'I'
-        self.formula = '1'
-        
-    def applyRight(self, wfinR): 
-        return wfinR
+def identity():
+    """Identity operator."""
 
-    def applyLeft(self, wfinL): 
-        return wfinL
+    def action(wf, **kwds):
+        return wf
+
+    Op = Operator()
+    Op.name    = 'Identity'
+    Op.symbol  = 'I'
+    Op.formula = '1'
+        
+    Op.action(action, 'LR')    
+    return Op
+
+
+def scalar_pot(func):
+    """Scalar potential operator."""
+
+    def action(wf, **kwds):
+        r = wf.mesh.points
+        return func(r) * wf
+
+    Op = Operator()
+    Op.name    = 'Scalar potential'
+    Op.symbol  = func.__name__
+    Op.formula = ''
+    Op.info = '\n'+inspect.getsource(func)
+        
+    Op.action(action, 'LR')    
+    return Op
+
+
+def exponential(Opin, order = 4, exp_step = 1.0):
+    """Exponential operator.
+           
+    Creates the exponential operator of operator Opin 
+    exp(Opin) with a Taylor expansion at a given order.
+
+    Parameters
+    ----------
+    Opin: quantumPy.Operator
+        The operator to exponentiate.
+    order: int
+        The order of the Taylor expansion.
+    exp_step: float or complex
+        The step size of the expansion.
+        
+    Returns
+    -------
+    Op: quantumPy.Operator
+        The exponential operator exp(Opin). 
+        
+    Notes
+    -----
+    The Taylor expansion is made with an additional step parameter `dh'
+    as follow:
+    
+    \exp(O dh) = sum_{i=0}{order} (O dh)^i/i!
+    
+    This parameter can also be specified when operator is applied by specifying 
+    `exp_step' parameter:
+
+    Examples:
+    ---------
+    >>> ...
+    >>> Exp = qp.exponential(Op)
+    >>> ewf = Exp.apply(wf, exp_step = 0.1)
+    >>> ...        
+    """
+    
+    def get_action(side):
+        if   side == 'L':
+            OpinApply = Opin.applyLeft
+        elif side == 'R':    
+            OpinApply = Opin.applyRight 
+        else: 
+            raise Exception
+
+        def action(wf, **kwds):
+            dh = kwds.get('exp_step', 1.0)
+            Opinwf = wf
+            Uwf = MeshFunction(np.zeros(wf.mesh.np, dtype = complex), wf.mesh)
+            Uwf[:] = 0.0
+            for i in range(order):
+                Uwf +=  Opinwf * (dh)**i / factorial(i)
+                Opinwf = OpinApply(Opinwf, **kwds)        
+            return Uwf
+
+        return action
+
+        
+    Op = Operator()
+    Op.name    = 'Exponential'
+    Op.symbol  = 'Exp'
+    Op.formula = 'exp(%s)'%Opin.symbol
+    
+    #Needed for write_info()
+    Op.op_list = [Opin]
+        
+    Op.action(get_action('L'), 'L')    
+    Op.action(get_action('R'), 'R') 
+       
+    return Op
+    
+
 
 #############################################
 class Gradient(Operator):
@@ -241,7 +340,7 @@ class Gradient(Operator):
         
         self.der = kwds.get('Der', Derivative(mesh, **kwds)) 
         
-    def applyRight(self, wfinR): 
+    def applyRight(self, wfinR, **kwds): 
         return self.der.perform(wfinR, degree = 1)
 
 
@@ -267,10 +366,10 @@ class Laplacian(Operator):
         self.der = kwds.get('Der', Derivative(mesh, **kwds)) 
         
                 
-    def applyRight(self,wfinR):        
+    def applyRight(self,wfinR, **kwds):        
         return self.der.perform(wfinR, degree = 2)
          
-    def applyLeft(self,wfinL):
+    def applyLeft(self,wfinL, **kwds):
         return self.applyRight(wfinL.conjugate())      
 
     def write_info(self, indent = 0):        
@@ -286,7 +385,7 @@ class Kinetic(Laplacian):
         self.symbol  = 'T'
         self.formula = '1/2 \\nabla^2'
         
-    def applyRight(self, wfinR): 
+    def applyRight(self, wfinR, **kwds): 
         return -0.5*super(Kinetic,self).applyRight(wfinR)
     
 
