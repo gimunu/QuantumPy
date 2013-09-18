@@ -33,7 +33,7 @@ from ..grid import *
 class Operator(object):
     """General low-level operator acting on a MeshFunction.
     
-    ...
+    This one of the main classes of the package. 
     
     Attributes
     ----------
@@ -167,8 +167,8 @@ class Operator(object):
             The function resulting from the right operator application.
         
         """   
-        wfout    = wfin.copy()
-        wfout[:] = 0.0 
+
+        wfout = MeshFunction(np.zeros(wfin.mesh.np, dtype = complex), wfin.mesh)
 
         if self.raction != None:
             wfout = self.raction(wfin, **kwds)
@@ -197,8 +197,9 @@ class Operator(object):
             The function resulting from the left operator application.
         
         """   
-        wfout    = wfin.copy()
-        wfout[:] = 0.0 
+
+        wfout = MeshFunction(np.zeros(wfin.mesh.np, dtype = complex), wfin.mesh)
+
         if self.laction != None:
             wfout = self.laction(wfin, **kwds)
         else:
