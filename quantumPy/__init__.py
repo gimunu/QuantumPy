@@ -17,13 +17,13 @@
 
 import numpy as np
 
-__all__ = ['base','grid','system','td']
+__all__ = ['base','grid','operators','td']
 
 for module in __all__:
     exec 'from . import {0}'.format(module)
 
 # Make selected functionality available directly in the root namespace.
-available = [('system.operators', system.operators.__all__),
+available = [('operators', operators.__all__),
              ('grid.mesh', ['Box']), 
              ('td.evolution', ['Propagator'])]
 for module, names in available:

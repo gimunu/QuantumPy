@@ -20,7 +20,7 @@ __all__=['Propagator']
 import numpy as np
 from ..base import *
 from ..grid.mesh import *
-from ..system import *
+from ..operators import *
 
 from scipy.misc import factorial
 

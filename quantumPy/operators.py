@@ -23,8 +23,8 @@ __all__ = ['Operator', 'Laplacian', 'Gradient', 'Kinetic', 'identity',
 import inspect
 import numpy as np
 from scipy.misc import factorial
-from ..base import *
-from ..grid import *
+from .base import *
+from .grid import *
 
 
 #############################################
