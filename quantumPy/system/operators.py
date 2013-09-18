@@ -17,7 +17,7 @@
 
 from __future__ import division
 
-__all__ = ['Operator', 'Laplacian', 'Gradient', 'Kinetic', 'Identity']
+__all__ = ['Operator', 'Laplacian', 'Gradient', 'Kinetic', 'Identity', 'Hamiltonian']
 
 import numpy as np
 from ..base import *
@@ -287,7 +287,7 @@ class Kinetic(Laplacian):
         self.formula = '1/2 \\nabla^2'
         
     def applyRight(self, wfinR): 
-        return 0.5*super(Kinetic,self).applyRight(wfinR)
+        return -0.5*super(Kinetic,self).applyRight(wfinR)
     
 
 #############################################
