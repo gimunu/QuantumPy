@@ -29,83 +29,104 @@ sys.path.append('../')
 
 import quantumPy as qp
 
-# First Create the box
-# By default the dimensionality is set to 1 
-Radius = 10.0
-box = qp.Box(shape = 'Sphere', radius = Radius, spacing = 0.2)
+#
+# Create the simulation box
+#
+Radius = 5.0
+box = qp.Box(shape = 'Sphere', radius = Radius, spacing = 0.05)
 box.write_info() # Write a detailed description of the box
 
-# Create an empty  MeshFunction living on the box
-array = np.zeros(box.np, dtype=complex)
-wf = qp.grid.MeshFunction( array, mesh = box)
 
-# Create a gaussian wave-packet with initial velocity k
-X = box.points
-k = 4.0
-sigma = np.sqrt(2.0)/k
-# wf = qp.grid.MeshFunction( np.pi**(-1.0/4.0) * sigma**(-1.0/2.0) *  
-#                            np.exp(-X[:]**2.0 / (2.0*sigma**2.0) + 1j*k*X[:]) , mesh = box)
-
-wf[:] = 1.0  
-
-
+# 
+# Define the external potential for an harmonic oscillator
+#
 def vext(x):
     omega = 1.0
     return 0.5*(x*omega)**2
-    
+#
+# Define the action of the potential on a MeshFuncion.
+# In this case is simply a multiplication with the potential
+# Action = Vext * wf
+#    
 def avext(wf):
     x = wf.mesh.points
     return vext(x)*wf
 
-Vext = qp.Operator(Raction = avext)
+#
+# Allocate and initialize the External potential operator.
+#
+Vext = qp.Operator()
+Vext.action(avext)      # Set operator's action 
 Vext.name ='External potential'
 Vext.symbol ='Vext'
 Vext.formula ='1/2 \omega^2 x^2'
 
-T = qp.system.operators.Kinetic(box, Strategy = 'fs', Bc = 'periodic')
+#
+# Kinetic operator
+#
+# T = qp.system.operators.Kinetic(box, Strategy = 'fs', Bc = 'periodic')
+# T = qp.system.operators.Kinetic(box, Strategy = 'fd', Order = 1, Bc = 'periodic')
+T = qp.Kinetic(box, Strategy = 'fd', Order = 3, Bc = 'zero')
+
+#
+# The Hamiltonian
+#
+H = qp.Hamiltonian(Operators = [T, Vext])
 
 
-H = qp.system.operators.Hamiltonian(Operators = [T, Vext])
-H.write_info()
-print "<H> = %s" % (H.expectationValue(wf))
-print "<Vext> = %s" % (Vext.expectationValue(wf))
-
-
-# Time propagation
+#
+# Imaginary-time propagation
 # Create the evolution operator
 U = qp.td.Propagator(H)
 U.write_info()
 
-nt = 1000
-# dt = 0.005
-dt = -1j * 0.001
+# imaginary time-step
+dt = -1j * 1 
 
-wft = wf.copy()
+# Enetgy threshold
+Eth = 1e-6
 
-anim = 0
+# Create an empty  MeshFunction 
+array = np.zeros(box.np, dtype=complex)
+wft = qp.grid.MeshFunction( array, mesh = box)
+
+wft[:] = np.random.rand(box.np)  # The initial guess of the 
+
+anim = 1
 if anim:
     pl.ion()
     pl.plot(wft.mesh.points, vext(wft.mesh.points).real)
-    line, =pl.plot(wft.mesh.points, (wft.conjugate()*wft).real)
+    line, =pl.plot(wft.mesh.points, (wft.conjugate()*wft).real, marker='o')
     line.axes.set_xlim(-Radius,Radius) 
-    line.axes.set_ylim(0,1) 
+    line.axes.set_ylim(-0.01,1.0) 
     pl.draw()
 
 
 print "i        t              <E>"
 # time-evolution loop
-for i in range(0,nt):
-    wft = U.apply(wft, dt = dt)         # Apply the propagator
+Eold = 0.0
+for i in range(0, 100):
+    # Apply the propagator
+    wft = U.apply(wft, dt = dt)         
+    # Normalize 
     norm2 =  (wft*wft.conjugate()).integrate().real
     wft /= np.sqrt(norm2)
-    E   = U.H.expectationValue(wft)     # Calculate the energy
-    v1 = U.H.op_list[0].expectationValue(wft)
-    v2 = U.H.op_list[1].expectationValue(wft)
-    print "%d\t %1.4f \t%f\t%f\t%f"%(i, i*dt.real, E.real, v1.real, v2.real)
+    # Calculate the energy
+    E   = U.H.expectationValue(wft)
+    dE  = np.abs(Eold - E)/np.abs(E)
+    Eold = E
+    if dE < Eth: 
+        exit      
+    # <T>
+    ET = U.H.op_list[0].expectationValue(wft) 
+    # <Vext>
+    EV = U.H.op_list[1].expectationValue(wft) 
+    print "%d\t %1.4f \t%f\t%f\t%f\t%f"%(i, i*dt.real, E.real, ET.real, EV.real, dE)
     if anim:
         line.set_ydata((wft.conjugate()*wft).real)
         pl.draw()
 
+print "Converged."
     
 
 if 0:
