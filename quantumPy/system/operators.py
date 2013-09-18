@@ -168,7 +168,7 @@ class Operator(object):
         
         """   
 
-        wfout = MeshFunction(np.zeros(wfin.mesh.np, dtype = complex), wfin.mesh)
+        wfout = MeshFunction(np.zeros(wfin.mesh.np, dtype = wfin.dtype), wfin.mesh)
 
         if self.raction != None:
             wfout = self.raction(wfin, **kwds)
@@ -198,7 +198,7 @@ class Operator(object):
         
         """   
 
-        wfout = MeshFunction(np.zeros(wfin.mesh.np, dtype = complex), wfin.mesh)
+        wfout = MeshFunction(np.zeros(wfin.mesh.np, dtype = wfin.dtype), wfin.mesh)
 
         if self.laction != None:
             wfout = self.laction(wfin, **kwds)

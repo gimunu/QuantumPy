@@ -77,7 +77,7 @@ Eth = 1e-6
 array = np.zeros(box.np, dtype=complex)
 wft = qp.grid.MeshFunction( array, mesh = box)
 
-wft = qp.grid.MeshFunction( np.random.rand(box.np), mesh = box)
+wft = qp.grid.MeshFunction( np.random.rand(box.np) +0.j, mesh = box)
 
 # wft = np.random.rand(box.np)  # The initial guess 
 # wft[:] = 1.0  # The initial guess 
