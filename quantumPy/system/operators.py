@@ -62,7 +62,22 @@ class Operator(object):
             
         
         self.update()
+    
+    def action(self, funct, key = 'LR'):
         
+        if (key =='LR'):
+            self.raction = funct
+            self.laction = funct
+        elif (key == 'L'):
+            self.laction = funct    
+        elif key == 'R':
+            self.raction = funct 
+        else:
+            raise Exception
+
+        self.update()    
+
+             
     def update(self):
         """Update the internal attributes.
         
@@ -197,7 +212,9 @@ class Operator(object):
 
 
 #############################################
-#
+#  Library of operators
+#############################################
+
 #############################################
 class Identity(Operator):
     """Identity operator"""
@@ -213,8 +230,6 @@ class Identity(Operator):
     def applyLeft(self, wfinL): 
         return wfinL
 
-#############################################
-#
 #############################################
 class Gradient(Operator):
     """Gradient operator"""
@@ -235,9 +250,6 @@ class Gradient(Operator):
         self.der.write_info(indent = indent)
         
 
-
-#############################################
-#
 #############################################
 class Laplacian(Operator):
     """Laplacian operator"""
@@ -256,7 +268,7 @@ class Laplacian(Operator):
         
                 
     def applyRight(self,wfinR):        
-        return self.der.perform(wfinR, degree = 1)
+        return self.der.perform(wfinR, degree = 2)
          
     def applyLeft(self,wfinL):
         return self.applyRight(wfinL.conjugate())      
@@ -264,12 +276,7 @@ class Laplacian(Operator):
     def write_info(self, indent = 0):        
         super(Laplacian,self).write_info(indent)
         self.der.write_info(indent = indent)
-             
 
-
-
-#############################################
-#
 #############################################
 class Kinetic(Laplacian):
     """Kinetic operator"""
@@ -283,8 +290,6 @@ class Kinetic(Laplacian):
         return 0.5*super(Kinetic,self).applyRight(wfinR)
     
 
-#############################################
-#
 #############################################
 class Hamiltonian(Operator):
     """Hamiltonian operator.
