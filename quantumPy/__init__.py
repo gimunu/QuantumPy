@@ -25,7 +25,7 @@ for module in __all__:
 # Make selected functionality available directly in the root namespace.
 available = [('operators', operators.__all__),
              ('grid.mesh', ['Box']), 
-             ('td.evolution', ['Propagator'])]
+             ('td', ['Propagator'])]
 for module, names in available:
     exec 'from .{0} import {1}'.format(module, ', '.join(names))
     __all__.extend(names)

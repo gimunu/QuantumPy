@@ -181,20 +181,7 @@ class Operator(object):
     def applyLeft(self, wfin, **kwds):    
         """Operator left action.
         
-        Compose the right action by sequentially applying all the operators in the 
-        operators list.
-        
-        Parameters
-        ----------
-        wfin : MeshFunction
-            Function acting from the left.
-        **kwds : dictionary
-            Optional parameters for subclass extension.
-        
-        Returns
-        -------    
-        wfout: MeshFunction
-            The function resulting from the left operator application.
+        Same as applyRight but for left-action.
         
         """   
 

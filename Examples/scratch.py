@@ -62,9 +62,9 @@ H = qp.Hamiltonian(Operators = [T, Vext])
 #################################################
 # Imaginary-time propagation
 # Create the evolution operator
-# U = qp.td.Propagator(H)
+U = qp.td.Propagator(H)
 
-U = qp.exponential(H)
+# U = qp.exponential(H)
 U.write_info()
 
 # imaginary time-step
@@ -98,8 +98,8 @@ print "i        t              <E>"
 Eold = 0.0
 for i in range(0, int(1e3)):
     # Apply the propagator
-    # wft = U.apply(wft, dt = dtau)         
-    wft = U.apply(wft, exp_step = -1j * dtau)         
+    wft = U.apply(wft, dt = dtau)         
+    # wft = U.apply(wft, exp_step = -1j * dtau)         
     # Normalize 
     norm2 =  (wft*wft.conjugate()).integrate().real
     wft /= np.sqrt(norm2)
