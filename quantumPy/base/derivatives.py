@@ -19,7 +19,7 @@
 
 from __future__ import division
 
-__all__=['fd_derivative', 'Derivative']
+__all__=['Derivative']
 
 import numpy as np
 from . import *
@@ -75,7 +75,7 @@ class Derivative(object):
         
         self.bc =    kwds.get('Bc', 'zero')           # Boundary conditions
         self.strategy = kwds.get('Strategy', 'fs' if (self.bc.lower() == 'periodic') else 'fd')
-        self.order = kwds.get('Order', 2)          
+        self.order = kwds.get('Order', 4)          
         self.cube = kwds.get('Cube', None)
         
         if (self.strategy.lower() == 'fs' and self.cube is None):
@@ -123,20 +123,24 @@ class Derivative(object):
         elif degree == 0:    
             return wfin
 
-        elif degree == 1 or degree == 2:     
+        elif degree == 1: 
             wfout = wfin.copy()
             wfout[:] = 0.0
             
             if self.bc.lower() == 'periodic':    
                 raise NotImplementedError
-            
             n1 = mesh.np
-            sp =  self.order + 1 # number of stencil points
+            sp =  2*self.order + 1 # number of stencil points
             stname = '%d_%dp_c'%(degree, sp) # pick the appropriate weights   
             for ii in range(int(sp/2), n1 - int(sp/2)):
                 for jj in range(sp):
                     wfout[ii] += wfin[ii - int(sp/2) + jj] * _fd_weight[stname][jj]
             wfout /= mesh.spacing**(degree)        
+
+        elif degree == 2: 
+            # Use Ask's    
+            wfout = second_derivative(wfin, self.order, periodic= (self.bc == 'periodic'))
+
         else:
             raise Exception('Unavailable derivative of order >= 2. Order %s was given.'%(order))
 
@@ -148,53 +152,44 @@ class Derivative(object):
         print_msg( "strategy  = %s "%(self.strategy), indent = indent+1)
 
         if self.strategy.lower() == 'fd':
-            print_msg( "  order = %d   (%d-points stencil)"%(self.order, self.order+1), indent = indent+2)   
+            print_msg( "  order = %d   (%d-points stencil)"%(self.order, 2*self.order+1), indent = indent+2)   
         if self.strategy.lower() == 'fs':
             self.cube.write_info(indent = indent+2)
 
 
 
-def fd_derivative(wfin, **kwds):
-    """Finite difference derivative of a MeshFunction.
-    
-    ...
-    
-    """
-
-    mesh = wfin.mesh
-    boundary = kwds.get('Boundary', 'zero') # Boundary conditions
-    degree = kwds.get('Degree', 1)          # Derivative degree (1 = 1s derivative, 2 =2nd derivative )
-    order = kwds.get('Order', 2)            # Fine difference approx. order
-
-    # Handle exceptions
-    if mesh.dim > 1:
-        raise NotImplementedError
-        
-    if 'Cartesian' not in mesh.properties:    
-        raise NotImplementedError
-
-    if 'Uniform' not in mesh.properties:    
-        raise NotImplementedError
 
 
-    if   degree < 0:
-        raise Exception('Unavailable derivative of order %s.'%(order))
 
-    elif degree == 0:    
-        return wfin
+# def get_kinetic(x, order=1, periodic=False):
+def second_derivative(wf, order=1, periodic=False):
+    """ Ask's implementation"""
+    stencils = [[0.],
+                [-2., 1.],
+                [-5./2., 4./3., -1./12.],
+                [-49./18., 3./2., -3./20., 1./90.],
+                [-205./72., 8./5., -1./5., 8./315., -1./560.],
+                [-5269./1800., 5./3., -5./21., 5./126., -5./1008., 1./3150.],
+                [-5369./1800., 12./7., -15./56., 10./189., -1./112., 2./1925.,
+                 -1./16632.]]
 
-    elif degree == 1 or degree == 2:     
-        wfout = wfin.copy()
-        wfout[:] = 0.0
-        #1D
-        n1 = mesh.np
-        sp =  order + 1 # number of stencil points
-        stname = '%d_%dp_c'%(degree, sp) # pick the appropriate weights   
-        for ii in range(int(sp/2), n1 - int(sp/2)):
-            for jj in range(sp):
-                wfout[ii] += wfin[ii - int(sp/2) + jj] * _fd_weight[stname][jj]
-        wfout /= mesh.spacing**(degree)        
+    N = wf.mesh.np
+    dx = wf.mesh.spacing
+    T = np.zeros((N, N), dtype=complex)
+    Tflat = T.ravel()
+
+    stencil = stencils[order]
+
+    for i, val in enumerate(stencil):
+        Tflat[i::N + 1] = val
+        Tflat[i * N::N + 1] = val
+    if periodic:
+        if order > 1:
+            raise NotImplementedError
+        T[-1, 0] = 1.0
+        T[0, -1] = 1.0
     else:
-        raise Exception('Unavailable derivative of order %s.'%(order))
-
-    return wfout    
+        for tmp in [T[:, -1], T[:, 0], T[0, :], T[-1, :]]:
+            tmp[:] = 0.0
+    T *= 1.0 / dx**2
+    return np.dot(T,wf)
