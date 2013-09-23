@@ -21,6 +21,7 @@ __all__ = ['Operator', 'Laplacian', 'Gradient', 'Kinetic', 'identity',
            'scalar_pot' , 'Hamiltonian', 'exponential']
 
 import inspect
+import types
 import numpy as np
 from scipy.misc import factorial
 from .base import *
@@ -115,7 +116,7 @@ class Operator(object):
     def apply(self, wfin, **kwds):
         """ Apply the operator to a wavefunction.
         
-        ...
+        By default this is the right-action: O * Wf
         
         Parameters
         ----------
@@ -159,7 +160,37 @@ class Operator(object):
         out = (wfL * self.applyRight(wfR, **kwds)).integrate()
 
         return out 
+    
+    def _applyLR(self, side):
+        """Helper method that generating applyRight and apply Left.
         
+        """ 
+        
+        if   side =='L':
+            actionattr  = 'laction'
+            applymethod = 'applyLeft'
+        elif side == 'R':    
+            actionattr  = 'raction'
+            applymethod = 'applyRight'
+        else:
+            raise Exception('Unrecognized side-action %s'%side)
+        
+        def actionLR(self, wfin, **kwds):
+
+            wfout = MeshFunction(np.zeros(wfin.mesh.np, dtype = wfin.dtype), wfin.mesh)
+
+            if self.raction != None:
+                action = getattr(self, actionattr)
+                wfout = action(wfin, **kwds)
+            else:
+                for Op in self.op_list:
+                    applym = getattr(Op, applymethod)
+                    wfout += applym(wfin, **kwds)
+        
+            return wfout
+
+        
+        return actionLR
         
     def applyRight(self, wfin, **kwds): 
         """Operator right action.
@@ -180,16 +211,20 @@ class Operator(object):
             The function resulting from the right operator application.
         
         """   
-
-        wfout = MeshFunction(np.zeros(wfin.mesh.np, dtype = wfin.dtype), wfin.mesh)
-
-        if self.raction != None:
-            wfout = self.raction(wfin, **kwds)
-        else:
-            for Op in self.op_list:
-                wfout += Op.applyRight(wfin, **kwds)
         
-        return wfout
+        applyR = self._applyLR('R')
+        
+        return applyR(self, wfin, **kwds)
+
+        # wfout = MeshFunction(np.zeros(wfin.mesh.np, dtype = wfin.dtype), wfin.mesh)
+        # 
+        # if self.raction != None:
+        #     wfout = self.raction(wfin, **kwds)
+        # else:
+        #     for Op in self.op_list:
+        #         wfout += Op.applyRight(wfin, **kwds)
+        # 
+        # return wfout
 
     def applyLeft(self, wfin, **kwds):    
         """Operator left action.
@@ -197,29 +232,19 @@ class Operator(object):
         Same as applyRight but for left-action.
         
         """   
-
-        wfout = MeshFunction(np.zeros(wfin.mesh.np, dtype = wfin.dtype), wfin.mesh)
-
-        if self.laction != None:
-            wfout = self.laction(wfin, **kwds)
-        else:
-            for Op in self.op_list:
-                wfout += Op.applyLeft(wfin, **kwds)
+        applyL = self._applyLR('L')
         
-        return wfout
-
-    def __add__(self, other):
-        Op = Operator()
-        Op.name    = 'Composed Operator'
-        Op.symbol  = 'O'
-        Op.formula = self.symbol + ' + ' + other.symbol
-        Op.op_list.append(self  if not self.op_list  else self.op_list)
-        Op.op_list.append(other if not other.op_list else other.op_list)
-        Op.op_list=list(flatten(Op.op_list))
-        Op.update()
+        return applyL(self, wfin, **kwds)
         
-        return Op
-                
+        # wfout = MeshFunction(np.zeros(wfin.mesh.np, dtype = wfin.dtype), wfin.mesh)
+        # 
+        # if self.laction != None:
+        #     wfout = self.laction(wfin, **kwds)
+        # else:
+        #     for Op in self.op_list:
+        #         wfout += Op.applyLeft(wfin, **kwds)
+        # 
+        # return wfout
 
     def write_info(self, indent = 0):
         print_msg( "%s operator (%s): "%(self.name, self.symbol), indent = indent )       
@@ -230,6 +255,76 @@ class Operator(object):
         # Write details of all the composing ops
         for Op in self.op_list:
             Op.write_info(indent = indent+1)
+
+    #
+    # Override operators + - *  on member of the class.
+    #
+
+    def _is_scalar_element(self, x):
+    		"""Is x a scalar
+
+    		"""
+    		return isinstance(x, types.IntType) or \
+    				isinstance(x, types.FloatType) or \
+    				isinstance(x, types.ComplexType)    
+
+    def __add__(self, other):
+        
+        if self._is_scalar_element(other):
+            pass
+        
+        if not isinstance(other, Operator):
+            raise TypeError("Cannot add Operator and type %s" % type(other))
+            
+        Op = Operator()
+        Op.name    = 'Composed-operator'
+        Op.symbol  = 'O'
+        Op.formula = self.symbol + ' + ' + other.symbol
+        Op.op_list.append(self  if not self.op_list  else self.op_list)
+        Op.op_list.append(other if not other.op_list else other.op_list)
+        Op.op_list=list(flatten(Op.op_list))
+        Op.update()
+        
+        return Op
+                
+    #     def __neg__(self):
+    #     """Negate the current Operator
+    #     """
+    #         pass
+    #         # return self.inverse_element*self
+    # 
+    # def __sub__(self, other):
+    #     """Subtract Operator self-other
+    #     """
+    #         pass 
+    #         # return self + -other            
+    # 
+    #     def __mul__(self, other):
+    #     """Multiply Operator self*other
+    # 
+    #     other can be another Operator or a scalar.
+    #     """
+    #         
+    #         pass
+    #         
+    #         # if self.is_scalar_element(other):
+    #         #     return self.scalar_multiply(other)
+    #         # if not isinstance(other, Matrix):
+    #         #     raise TypeError("Cannot multiply matrix and type %s" % type(other))
+    #         # if other.is_row_vector():
+    #         #     raise Matrix_Multiplication_Error(self, other)
+    #         # return self.matrix_multiply(other)
+    # 
+    # def __rmul__(self, other):
+    #     """Multiply other*self
+    # 
+    #     This is only called if other.__mul__ is not defined, so assume that
+    #     other is a scalar.
+    #     """
+    #         pass
+    #         # if not self.is_scalar_element(other):
+    #         #     raise TypeError("Cannot right-multiply by %s" % type(other))
+    #         # return self.scalar_multiply(other)
 
 
 #############################################
@@ -251,6 +346,7 @@ def identity():
     return Op
 
 
+#------------------------------------------------------
 def scalar_pot(func):
     """Scalar potential operator."""
 
@@ -268,6 +364,7 @@ def scalar_pot(func):
     return Op
 
 
+#------------------------------------------------------
 def exponential(Opin, order = 4, exp_step = 1.0):
     """Exponential operator.
            
@@ -342,7 +439,7 @@ def exponential(Opin, order = 4, exp_step = 1.0):
     
 
 
-#############################################
+#------------------------------------------------------
 class Gradient(Operator):
     """Gradient operator"""
     def __init__(self, mesh, **kwds):
@@ -362,7 +459,8 @@ class Gradient(Operator):
         self.der.write_info(indent = indent)
         
 
-#############################################
+
+#------------------------------------------------------
 class Laplacian(Operator):
     """Laplacian operator"""
     def __init__(self, mesh, **kwds):
@@ -389,7 +487,8 @@ class Laplacian(Operator):
         super(Laplacian,self).write_info(indent)
         self.der.write_info(indent = indent)
 
-#############################################
+
+#------------------------------------------------------
 class Kinetic(Laplacian):
     """Kinetic operator"""
     def __init__(self, mesh, **kwds):
@@ -402,7 +501,8 @@ class Kinetic(Laplacian):
         return -0.5*super(Kinetic,self).applyRight(wfinR)
     
 
-#############################################
+
+#------------------------------------------------------
 class Hamiltonian(Operator):
     """Hamiltonian operator.
     
