@@ -60,7 +60,7 @@ wf = qp.grid.MeshFunction( np.pi**(-1.0/4.0) * sigma**(-1.0/2.0) *
 # The expectation value on our gaussian packet should be
 # it's momentum k: <- i \nabla> = <P>  
 #
-Grad = qp.system.Gradient(box, Strategy = 'fd')
+Grad = qp.Gradient(box, Strategy = 'fd')
 # Grad.write_info()
 print "* <P> = %12.6f" % ( (- 1j * Grad.expectationValue(wf)).real)
 
@@ -70,7 +70,7 @@ print "* <P> = %12.6f" % ( (- 1j * Grad.expectationValue(wf)).real)
 #  <T> = 5/4 <P>^2/2 (= 10 for our gaussian with k = 4 )
 #
 # T = qp.system.operators.Kinetic(box, Strategy = 'fd', Order = 1, Bc = 'periodic')
-T = qp.system.operators.Kinetic(box, Strategy = 'fd', Order = 4, Bc = 'zero')
+T = qp.operators.Kinetic(box, Strategy = 'fd', Order = 4, Bc = 'zero')
 print "* <T> = %12.6f" % (T.expectationValue(wf).real)
 
 
@@ -79,7 +79,7 @@ print "* <T> = %12.6f" % (T.expectationValue(wf).real)
 # Add the kinetic operator to the list of operators 
 # composing the Hamiltonian.  
 #
-H = qp.system.operators.Hamiltonian(Operators = [T])
+H = qp.operators.Hamiltonian(Operators = [T])
 H.write_info()
 print "* <H> = %12.6f" % (H.expectationValue(wf).real)
 
@@ -96,7 +96,7 @@ print "Ek = %s"%(E)
 #
 # Test operator composition
 #
-OP = qp.system.Operator(Operators = [T,T,Grad])
+OP = qp.Operator(Operators = [T,T,Grad])
 OP.write_info()
 
 
@@ -108,8 +108,8 @@ OP.write_info()
 U = qp.td.Propagator(H)
 U.write_info()
 
-nt = 500
-dt = 0.001
+nt = 1000
+dt = 0.005
 
 wft = wf.copy()
 
