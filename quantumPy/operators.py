@@ -25,6 +25,7 @@ import types
 import numpy as np
 from scipy.misc import factorial
 from .base import *
+from .base import trees
 from .grid import *
 
 
@@ -70,6 +71,7 @@ class Operator(object):
         self.info    = kwds.get('info'   , None)
         
         self.op_list = kwds.get('Operators', [])
+        self.expr = trees.BinaryTree(self)
         
         self.hermitian = True
         self.raction = None
@@ -93,6 +95,16 @@ class Operator(object):
 
         self.update()    
 
+
+    def iterate_tree(self, tree):
+        for x in tree:
+            print '%s %s'% (x[0], isinstance(x[0], Operator))
+            if isinstance(x[0], Operator):
+                yield '%s %s %s'%( x[0].symbol, x[2], x[1].symbol)
+            else:
+                for y in self.iterate_tree(x):
+                    yield y
+                    
              
     def update(self):
         """Update the internal attributes.
@@ -104,19 +116,22 @@ class Operator(object):
         self.hermitian = (self.raction == self.laction)
         
         # Generate a formula representation
-        if len(self.op_list) > 0:
-            self.formula = ''
+        # if len(self.op_list) > 0:
+        #     self.formula = ''
+        # 
+        # for i in range(len(self.op_list)):
+        #     Op = self.op_list[i]
+        #     self.formula = self.formula + Op.symbol  
+        #     if i < len(self.op_list)-1:
+        #         self.formula = self.formula + ' + '
         
-        for i in range(len(self.op_list)):
-            Op = self.op_list[i]
-            self.formula = self.formula + Op.symbol  
-            if i < len(self.op_list)-1:
-                self.formula = self.formula + ' + '
+        self.formula = trees.printexp(self.expr)
+        
             
     def apply(self, wfin, **kwds):
         """ Apply the operator to a wavefunction.
         
-        By default this is the right-action: O * Wf
+        By default this is the right-action `O * Wf'.
         
         Parameters
         ----------
@@ -246,6 +261,9 @@ class Operator(object):
         # 
         # return wfout
 
+    def __str__(self):
+        return self.symbol
+
     def write_info(self, indent = 0):
         print_msg( "%s operator (%s): "%(self.name, self.symbol), indent = indent )       
         if self.formula != None:
@@ -261,75 +279,68 @@ class Operator(object):
     #
 
     def _is_scalar_element(self, x):
-    		"""Is x a scalar
+    		"""Is x a scalar?
 
     		"""
     		return isinstance(x, types.IntType) or \
     				isinstance(x, types.FloatType) or \
     				isinstance(x, types.ComplexType)    
+                    
+    def _algebraic_operation( self, other, operation, reverse = False):
 
-    def __add__(self, other):
+        opers = ['+','-','*']
+        assert(operation in opers)
         
         if self._is_scalar_element(other):
-            pass
+            other = scalar(other)
         
-        if not isinstance(other, Operator):
-            raise TypeError("Cannot add Operator and type %s" % type(other))
+        elif not isinstance(other, Operator):
+            raise TypeError("Cannot perform '%s' and type %s" %(operation, type(other)))
             
         Op = Operator()
         Op.name    = 'Composed-operator'
         Op.symbol  = 'O'
-        Op.formula = self.symbol + ' + ' + other.symbol
-        Op.op_list.append(self  if not self.op_list  else self.op_list)
-        Op.op_list.append(other if not other.op_list else other.op_list)
-        Op.op_list=list(flatten(Op.op_list))
-        Op.update()
+        
+        Op.expr.setRootVal(operation)
+        if reverse:
+            Op.expr.insertRight(self.expr)
+            Op.expr.insertLeft(other.expr)
+        else:    
+            Op.expr.insertLeft(self.expr)
+            Op.expr.insertRight(other.expr)
         
         return Op
-                
-    #     def __neg__(self):
-    #     """Negate the current Operator
-    #     """
-    #         pass
-    #         # return self.inverse_element*self
-    # 
-    # def __sub__(self, other):
-    #     """Subtract Operator self-other
-    #     """
-    #         pass 
-    #         # return self + -other            
-    # 
-    #     def __mul__(self, other):
-    #     """Multiply Operator self*other
-    # 
-    #     other can be another Operator or a scalar.
-    #     """
-    #         
-    #         pass
-    #         
-    #         # if self.is_scalar_element(other):
-    #         #     return self.scalar_multiply(other)
-    #         # if not isinstance(other, Matrix):
-    #         #     raise TypeError("Cannot multiply matrix and type %s" % type(other))
-    #         # if other.is_row_vector():
-    #         #     raise Matrix_Multiplication_Error(self, other)
-    #         # return self.matrix_multiply(other)
-    # 
-    # def __rmul__(self, other):
-    #     """Multiply other*self
-    # 
-    #     This is only called if other.__mul__ is not defined, so assume that
-    #     other is a scalar.
-    #     """
-    #         pass
-    #         # if not self.is_scalar_element(other):
-    #         #     raise TypeError("Cannot right-multiply by %s" % type(other))
-    #         # return self.scalar_multiply(other)
+        
+
+    def __add__(self, other):
+        return    self._algebraic_operation(other, '+', reverse = False)
+   
+    def __radd__(self, other):
+        return    self._algebraic_operation(other, '+', reverse = True)
+        
+    
+    def __mul__(self, other):        
+        return    self._algebraic_operation(other, '*', reverse = False)
+        
+    def __rmul__(self, other):
+        return    self._algebraic_operation(other, '*', reverse = True)
+        
+    def __neg__(self):
+        return -1*self 
+           
+    def __sub__(self, other):    
+        return    self._algebraic_operation(other, '-', reverse = False)
+        
+    def __rsub__(self, other):
+        return    self._algebraic_operation(other, '-', reverse = True)
+            
+        
 
 
 #############################################
 #  Library of operators
 #############################################
+
 
 def identity():
     """Identity operator."""
@@ -341,6 +352,21 @@ def identity():
     Op.name    = 'Identity'
     Op.symbol  = 'I'
     Op.formula = '1'
+        
+    Op.action(action, 'LR')    
+    return Op
+
+#------------------------------------------------------
+def scalar(val):
+    """Identity operator."""
+
+    def action(wf, **kwds):
+        return val*wf
+
+    Op = Operator()
+    Op.name    = 'Scalar'
+    Op.symbol  = str(val)
+    Op.formula = str(val)
         
     Op.action(action, 'LR')    
     return Op
