@@ -40,18 +40,18 @@ class BinaryTree:
 
     def insertLeft(self,newNode):
         if self.leftChild == None:
-            self.leftChild = BinaryTree(newNode)
+            self.leftChild = BinaryTree(newNode) if not isinstance(newNode, BinaryTree) else newNode
         else:
-            t = BinaryTree(newNode)
-            t.left = self.leftChild
+            t = BinaryTree(newNode) if not isinstance(newNode, BinaryTree) else newNode
+            # t.left = self.leftChild
             self.leftChild = t
     
     def insertRight(self,newNode):
         if self.rightChild == None:
-            self.rightChild = BinaryTree(newNode)
+            self.rightChild = BinaryTree(newNode) if not isinstance(newNode, BinaryTree) else newNode
         else:
-            t = BinaryTree(newNode)
-            t.right = self.rightChild
+            t = BinaryTree(newNode) if not isinstance(newNode, BinaryTree) else newNode
+            # t.right = self.rightChild
             self.rightChild = t
 
     def isLeaf(self):
@@ -72,7 +72,7 @@ class BinaryTree:
     def setRootVal(self,obj):
         self.key = obj
 
-    def getRootVal(self,):
+    def getRootVal(self):
         return self.key
 
     def inorder(self):
@@ -106,8 +106,9 @@ class BinaryTree:
             self.rightChild.printexp()
             print') '
 
-    def postordereval(self):
-        opers = {'+':operator.add, '-':operator.sub, '*':operator.mul, '/':operator.truediv}
+    def postordereval(self, opers = None):
+        if not opers:
+            opers = {'+':operator.add, '-':operator.sub, '*':operator.mul, '/':operator.truediv}
         res1 = None
         res2 = None
         if self.leftChild:
