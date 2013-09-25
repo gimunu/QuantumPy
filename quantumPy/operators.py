@@ -106,7 +106,7 @@ class Operator(object):
         self.hermitian = (self.raction == self.laction)
         
         # Generate a formula representation        
-        self.formula = trees.printexp(self.expr)
+        self.formula = str(self.expr)
 
 
     def has_left_action(self):
@@ -144,7 +144,7 @@ class Operator(object):
         if wfL == None:
             wfL = wfR.copy().conjugate()
 
-        out = (wfL * self.applyRight(wfR, **kwds)).integrate()
+        out = (wfL * self.apply(wfR, side = 'R', **kwds)).integrate()
 
         return out 
             
@@ -168,9 +168,9 @@ class Operator(object):
         """
         print "called apply from %s (class %s)"%(self.expr, self.__class__.__name__)
         
-        apply = self._applyLR(side)
+        _apply = self._applyLR(side)
         
-        return apply(self, wfin, **kwds)
+        return _apply(self, wfin, **kwds)
         # return  self.applyRight(wfin, **kwds)
 
     
@@ -432,7 +432,8 @@ class Operator(object):
         else:    
             Op.expr.insertLeft(self.expr)
             Op.expr.insertRight(other.expr)
-        
+
+        Op.update()        
         return Op
         
 
@@ -600,8 +601,8 @@ class Gradient(Operator):
         
         self.der = kwds.get('Der', Derivative(mesh, **kwds)) 
     
-    def apply(self,wfin, side, **kwds): 
-        return self.der.perform(wfinR, degree = 1)        
+    def apply(self,wfin, side='R', **kwds): 
+        return self.der.perform(wfin, degree = 1)        
         
     def applyRight(self, wfinR, **kwds): 
         return self.der.perform(wfinR, degree = 1)
@@ -628,17 +629,17 @@ class Laplacian(Operator):
         
         self.der = kwds.get('Der', Derivative(mesh, **kwds)) 
     
-    def apply(self,wfin, side, **kwds):     
+    def apply(self,wfin, side='R', **kwds):     
         if side == 'R':
             return self.der.perform(wfin, degree = 2)
         else: 
-            return self.applyRight(wfin.conjugate())              
+            return self.apply(wfin.conjugate(), side='R', **kwds)              
                 
-    def applyRight(self,wfinR, **kwds):        
-        return self.der.perform(wfinR, degree = 2)
-         
-    def applyLeft(self,wfinL, **kwds):
-        return self.applyRight(wfinL.conjugate())      
+    # def applyRight(self,wfinR, **kwds):        
+    #     return self.der.perform(wfinR, degree = 2)
+    #      
+    # def applyLeft(self,wfinL, **kwds):
+    #     return self.applyRight(wfinL.conjugate())      
 
     def write_info(self, indent = 0):        
         super(Laplacian,self).write_info(indent)
@@ -655,11 +656,12 @@ class Kinetic(Laplacian):
         self.formula = '1/2 \\nabla^2'
     
     
-    def apply(self, wfin, side, **kwds):
-        return -0.5*super(Kinetic,self).applyRight(wfin)    
+    def apply(self, wfin, side = 'R', **kwds):
+        return -0.5*super(Kinetic,self).apply(wfin, side = side, **kwds)    
+        # return -0.5*super(Kinetic,self).applyRight(wfin)    
         
-    def applyRight(self, wfinR, **kwds): 
-        return -0.5*super(Kinetic,self).applyRight(wfinR)
+    # def applyRight(self, wfinR, **kwds): 
+    #     return -0.5*super(Kinetic,self).applyRight(wfinR)
     
 
 
