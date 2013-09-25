@@ -79,7 +79,7 @@ print "* <T> = %12.6f" % (T.expectationValue(wf).real)
 # Add the kinetic operator to the list of operators 
 # composing the Hamiltonian.  
 #
-H = qp.operators.Hamiltonian(Operators = [T])
+H = T
 H.write_info()
 print "* <H> = %12.6f" % (H.expectationValue(wf).real)
 
@@ -96,7 +96,7 @@ print "Ek = %s"%(E)
 #
 # Test operator composition
 #
-OP = qp.Operator(Operators = [T,T,Grad])
+OP = T + T + Grad
 OP.write_info()
 
 
