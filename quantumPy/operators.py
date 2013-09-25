@@ -182,21 +182,21 @@ class Operator(object):
         """
         opers = {'+':'_action_add', '-':'_action_sub', '*':'_action_mul'}
 
-        if   side =='L':
-            actionattr  = 'laction'
-        elif side == 'R':    
-            actionattr  = 'raction'
-        else:
-            raise Exception('Unrecognized action %s'%side)
-
         node1 = None
         node2 = None
         if expr:
-            node1 = expr.getRightChild()
-            debug_msg("node1 = %s"%node1)
-            node2 = node1.getSibling()
-            debug_msg("node2 = %s"%node2)
+            if   side == 'R':
+                node2 = expr.getRightChild()
+                node1 = node2.getSibling()
+            elif side == 'L':                    
+                node1 = expr.getLeftChild()
+                node2 = node1.getSibling()
+            else: 
+                raise Exception("Which side is `%s'?"%side)
             
+            debug_msg("node1 = %s"%node1)
+            debug_msg("node2 = %s"%node2)
+
             if   node1 == None:
                 raise Exception("Don't know what to do!")
             elif isinstance(node1.getRootVal(), Operator):
@@ -215,9 +215,9 @@ class Operator(object):
             
 
             applym = getattr(self, opers[expr.getRootVal()])
-            debug_msg("return = %s %s %s"%(Op2.expr, expr.getRootVal(),Op1.expr ))
+            debug_msg("return = %s %s %s"%(Op1.expr, expr.getRootVal(),Op2.expr ))
             debug_msg("----")
-            return  applym(Op2, Op1, wf, side, **kwds)
+            return  applym(Op1, Op2, wf, side, **kwds)
                         
 
                     
@@ -239,8 +239,6 @@ class Operator(object):
 
             wfout = MeshFunction(np.zeros(wfin.mesh.np, dtype = wfin.dtype), wfin.mesh)
 
-            # if self.has_right_action:
-            # if self.raction != None:
             if getattr(self, actionattr):
                 action = getattr(self, actionattr)
                 wfout = action(wfin, **kwds)
