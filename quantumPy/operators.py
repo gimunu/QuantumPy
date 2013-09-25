@@ -180,44 +180,57 @@ class Operator(object):
         performs the operations on the correct order.
         
         """
+        # This is the main method that evaluates the tree expression.
+        # It is recursive with a loop spanning different methods.
+        # This is the loop:
+        # 1. apply()
+        # 2. _applyLR()
+        # 3. _evaluate
+        # 4. _action_[add, sub, mul]()
+        # in point 4 there is explicit reference to apply() (point 1)
+        # and the loop closes.
+        
+        
         opers = {'+':'_action_add', '-':'_action_sub', '*':'_action_mul'}
-
-        node1 = None
-        node2 = None
+        
+        debug_msg("---- _evaluate (%s) "%side)
+        
+        def get_operator_from(node):
+            if   node == None:
+                raise Exception("Don't know what to do!")
+            elif isinstance(node.getRootVal(), Operator):
+                Op = node.getRootVal()
+            else:
+                Op = Operator()
+                Op.expr = node
+            return Op    
+        
+        nodeL = None
+        nodeR = None
         if expr:
+            # In order to perform the right (left) action we start by applying 
+            # the action of the operator form the right-most (left-most) leaf of the tree 
+            # on the right (left) together with the sibling node.
+            
             if   side == 'R':
-                node2 = expr.getRightChild()
-                node1 = node2.getSibling()
+                nodeR = expr.getRightChild()
+                nodeL = nodeR.getSibling()
             elif side == 'L':                    
-                node1 = expr.getLeftChild()
-                node2 = node1.getSibling()
+                nodeL = expr.getLeftChild()
+                nodeR = nodeL.getSibling()
             else: 
                 raise Exception("Which side is `%s'?"%side)
             
-            debug_msg("node1 = %s"%node1)
-            debug_msg("node2 = %s"%node2)
-
-            if   node1 == None:
-                raise Exception("Don't know what to do!")
-            elif isinstance(node1.getRootVal(), Operator):
-                Op1 = node1.getRootVal()
-            else:
-                Op1 = Operator()
-                Op1.expr = node1      
-
-            if   node2 == None:
-                raise Exception("Don't know what to do!")
-            elif isinstance(node2.getRootVal(), Operator):
-                Op2 = node2.getRootVal()
-            else:
-                Op2 = Operator()
-                Op2.expr = node2      
+            debug_msg("nodeL = %s"%nodeL)
+            debug_msg("nodeR = %s"%nodeR)
             
+            OpL = get_operator_from(nodeL)
+            OpR = get_operator_from(nodeR)            
 
-            applym = getattr(self, opers[expr.getRootVal()])
-            debug_msg("return = %s %s %s"%(Op1.expr, expr.getRootVal(),Op2.expr ))
+            operation = getattr(self, opers[expr.getRootVal()])
+            debug_msg("return = %s %s %s"%(OpL.expr, expr.getRootVal(),OpR.expr ))
             debug_msg("----")
-            return  applym(Op1, Op2, wf, side, **kwds)
+            return  operation(OpL, OpR, wf, side, **kwds)
                         
 
                     
@@ -226,7 +239,7 @@ class Operator(object):
         """Left and Right application generation.
         
         """ 
-        debug_msg("called _applyLR from %s"%self.expr)
+        debug_msg("called _applyLR (side = %s) from %s"%(side, self.expr))
         
         if   side =='L':
             actionattr  = 'laction'
@@ -252,24 +265,24 @@ class Operator(object):
         
     
  
-    def _action_add(self, Op1, Op2, wfin, side, **kwds):
-         wfout  = Op1.apply(wfin, side, **kwds) + Op2.apply(wfin, side, **kwds)
+    def _action_add(self, OpL, OpR, wfin, side, **kwds):
+         wfout  = OpL.apply(wfin, side, **kwds) + OpR.apply(wfin, side, **kwds)
          return wfout
 
-    def _action_sub(self, Op1, Op2, wfin, side, **kwds):
-         wfout  = Op1.apply(wfin, side, **kwds) - Op2.apply(wfin, side, **kwds)
+    def _action_sub(self, OpL, OpR, wfin, side, **kwds):
+         wfout  = OpL.apply(wfin, side, **kwds) - OpR.apply(wfin, side, **kwds)
          return wfout
 
-    def _action_mul(self, Op1, Op2, wfin, side, **kwds):
+    def _action_mul(self, OpL, OpR, wfin, side, **kwds):
         
-         wfout = MeshFunction(np.zeros(wfin.mesh.np, dtype = wfin.dtype), wfin.mesh)
+         # wfout = MeshFunction(np.zeros(wfin.mesh.np, dtype = wfin.dtype), wfin.mesh)
          
          if side == 'R':
-             wfout = Op2.apply(wfin , side, **kwds)
-             wfout = Op1.apply(wfout, side, **kwds)
+             wfout = OpR.apply(wfin , side, **kwds)
+             wfout = OpL.apply(wfout, side, **kwds)
          else:
-             wfout = Op2.apply(wfin , side, **kwds)
-             wfout = Op1.apply(wfout, side, **kwds)            
+             wfout = OpL.apply(wfin , side, **kwds)
+             wfout = OpR.apply(wfout, side, **kwds)            
          
          return wfout
 
