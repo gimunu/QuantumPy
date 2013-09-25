@@ -57,7 +57,7 @@ T = qp.Kinetic(box, Strategy = 'fd', Order = 4, Bc = 'zero')
 #
 # The Hamiltonian
 #
-H = qp.Hamiltonian(Operators = [T, Vext])
+H = T + Vext
 
 #################################################
 # Imaginary-time propagation
