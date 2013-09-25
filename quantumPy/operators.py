@@ -95,16 +95,6 @@ class Operator(object):
 
         self.update()    
 
-
-    def iterate_tree(self, tree):
-        for x in tree:
-            print '%s %s'% (x[0], isinstance(x[0], Operator))
-            if isinstance(x[0], Operator):
-                yield '%s %s %s'%( x[0].symbol, x[2], x[1].symbol)
-            else:
-                for y in self.iterate_tree(x):
-                    yield y
-                    
              
     def update(self):
         """Update the internal attributes.
@@ -115,39 +105,21 @@ class Operator(object):
         """
         self.hermitian = (self.raction == self.laction)
         
-        # Generate a formula representation
-        # if len(self.op_list) > 0:
-        #     self.formula = ''
-        # 
-        # for i in range(len(self.op_list)):
-        #     Op = self.op_list[i]
-        #     self.formula = self.formula + Op.symbol  
-        #     if i < len(self.op_list)-1:
-        #         self.formula = self.formula + ' + '
-        
+        # Generate a formula representation        
         self.formula = trees.printexp(self.expr)
-        
-            
-    def apply(self, wfin, **kwds):
-        """ Apply the operator to a wavefunction.
-        
-        By default this is the right-action `O * Wf'.
-        
-        Parameters
-        ----------
-        wfin : MeshFunction
-            Function acting from the right.
-        **kwds : dictionary
-            Optional additional parameters. This allow a subclass to extend the method.
-            
-        Returns
-        -------    
-        wfout: MeshFunction
-            The function resulting from the operator application.
-        
-        """
-        return  self.applyRight(wfin, **kwds)
 
+
+    def has_left_action(self):
+        return self.laction != None
+                    
+    def has_right_action(self):
+        return self.raction != None
+
+    
+    #
+    # Action of MeshFucntion(s)
+    #    
+    
     def expectationValue(self, wfR, wfL = None, **kwds):
         """ Calculate the expectation value of the operator.
         
@@ -175,11 +147,135 @@ class Operator(object):
         out = (wfL * self.applyRight(wfR, **kwds)).integrate()
 
         return out 
+            
+    def apply(self, wfin, side= 'R', **kwds):
+        """ Apply the operator to a wavefunction.
+        
+        By default this is the right-action `O * Wf'.
+        
+        Parameters
+        ----------
+        wfin : MeshFunction
+            Function acting from the right.
+        **kwds : dictionary
+            Optional additional parameters. This allow a subclass to extend the method.
+            
+        Returns
+        -------    
+        wfout: MeshFunction
+            The function resulting from the operator application.
+        
+        """
+        print "called apply from %s (class %s)"%(self.expr, self.__class__.__name__)
+        
+        apply = self._applyLR(side)
+        
+        return apply(self, wfin, **kwds)
+        # return  self.applyRight(wfin, **kwds)
+
+    
+    # def _evaluate(self, expression, wf, side, **kwds):
+    #     """Evaluates the algebraic expression containing operators. 
+    #     
+    #     This is the core method that runs through the expression tree and 
+    #     performs the operations on the correct order.
+    #     
+    #     """
+    #     opers = {'+':'_action_add', '-':'_action_sub', '*':'_action_mul'}
+    # 
+    #     if   side =='L':
+    #         actionattr  = 'laction'
+    #         applymethod = 'applyLeft'
+    #     elif side == 'R':    
+    #         actionattr  = 'raction'
+    #         applymethod = 'applyRight'
+    #     else:
+    #         raise Exception('Unrecognized action %s'%side)
+    # 
+    #     res1 = None
+    #     res2 = None
+    #     if expression:
+    #         res1 = self._evaluate(expression.getLeftChild() , wf, side, **kwds) 
+    #         res2 = self._evaluate(expression.getRightChild(), wf, side, **kwds) 
+    #         print "res1 = %s \t res2 = %s"%(res1.__class__.__name__, res2.__class__.__name__)
+    #         if res1 != None and res2 != None:
+    #             print "is leaf 1=%s 2=%s"%(res1.__class__.__name__, res2.__class__.__name__)
+    #             if isinstance(res1, Operator) and isinstance(res2, Operator):
+    #                 print "return = %s %s %s"%(res1, expression.getRootVal(),res2 )
+    #                 applym = getattr(self, opers[expression.getRootVal()])
+    #                 return  applym(res1, res2, wf, side, **kwds) 
+    #         else:
+    #             print "else %s"%trees.printexp(expression)
+    #             if expression.hasChild():
+    #                 print "%s haschild - root %s"%(expression, expression.getRootVal())
+    #                 return expression.getRootVal()
+    #             else:
+    #                 print "is leaf --"
+    #                 if self.raction != None:
+    #                     print "return %s %s"%(expression.getRootVal(), actionattr)
+    #                     action = getattr(expression.getRootVal(), actionattr)
+    #                     return action(wf, **kwds)
+    #                 else:
+    #                     print "return %s %s"%(expression.getRootVal(), applymethod)
+    #                     applym = getattr(expression.getRootVal(), applymethod)
+    #                     return applym(wf, **kwds)
+                        
+    def _evaluate(self, expr, wf, side, **kwds):
+        """Evaluates the algebraic expression containing operators. 
+        
+        This is the core method that runs through the expression tree and 
+        performs the operations on the correct order.
+        
+        """
+        opers = {'+':'_action_add', '-':'_action_sub', '*':'_action_mul'}
+
+        if   side =='L':
+            actionattr  = 'laction'
+            applymethod = 'applyLeft'
+        elif side == 'R':    
+            actionattr  = 'raction'
+            applymethod = 'applyRight'
+        else:
+            raise Exception('Unrecognized action %s'%side)
+
+        node1 = None
+        node2 = None
+        if expr:
+            node1 = expr.getRightChild()
+            print "node1 = %s"%node1
+            node2 = node1.getSibling()
+            print "node2 = %s"%node2
+            
+            if   node1 == None:
+                raise Exception("Don't know what to do!")
+            elif isinstance(node1.getRootVal(), Operator):
+                Op1 = node1.getRootVal()
+            else:
+                Op1 = Operator()
+                Op1.expr = node1      
+
+            if   node2 == None:
+                raise Exception("Don't know what to do!")
+            elif isinstance(node2.getRootVal(), Operator):
+                Op2 = node2.getRootVal()
+            else:
+                Op2 = Operator()
+                Op2.expr = node2      
+            
+
+            applym = getattr(self, opers[expr.getRootVal()])
+            print "return = %s %s %s"%(Op2.expr, expr.getRootVal(),Op1.expr )
+            print "----"
+            return  applym(Op2, Op1, wf, side, **kwds)
+                        
+
+                    
     
     def _applyLR(self, side):
-        """Helper method that generating applyRight and apply Left.
+        """Left and Right application generation.
         
         """ 
+        print "called _applyLR from %s"%self.expr
         
         if   side =='L':
             actionattr  = 'laction'
@@ -188,19 +284,22 @@ class Operator(object):
             actionattr  = 'raction'
             applymethod = 'applyRight'
         else:
-            raise Exception('Unrecognized side-action %s'%side)
+            raise Exception('Unrecognized action %s'%side)
         
         def actionLR(self, wfin, **kwds):
 
             wfout = MeshFunction(np.zeros(wfin.mesh.np, dtype = wfin.dtype), wfin.mesh)
 
-            if self.raction != None:
+            # if self.has_right_action:
+            # if self.raction != None:
+            if getattr(self, actionattr):
                 action = getattr(self, actionattr)
                 wfout = action(wfin, **kwds)
             else:
-                for Op in self.op_list:
-                    applym = getattr(Op, applymethod)
-                    wfout += applym(wfin, **kwds)
+                # for Op in self.op_list:
+                #     applym = getattr(Op, applymethod)
+                #     wfout += applym(wfin, **kwds)
+                wfout = self._evaluate(self.expr, wfin, side, **kwds)
         
             return wfout
 
@@ -231,15 +330,6 @@ class Operator(object):
         
         return applyR(self, wfin, **kwds)
 
-        # wfout = MeshFunction(np.zeros(wfin.mesh.np, dtype = wfin.dtype), wfin.mesh)
-        # 
-        # if self.raction != None:
-        #     wfout = self.raction(wfin, **kwds)
-        # else:
-        #     for Op in self.op_list:
-        #         wfout += Op.applyRight(wfin, **kwds)
-        # 
-        # return wfout
 
     def applyLeft(self, wfin, **kwds):    
         """Operator left action.
@@ -250,32 +340,66 @@ class Operator(object):
         applyL = self._applyLR('L')
         
         return applyL(self, wfin, **kwds)
-        
-        # wfout = MeshFunction(np.zeros(wfin.mesh.np, dtype = wfin.dtype), wfin.mesh)
-        # 
-        # if self.laction != None:
-        #     wfout = self.laction(wfin, **kwds)
-        # else:
-        #     for Op in self.op_list:
-        #         wfout += Op.applyLeft(wfin, **kwds)
-        # 
-        # return wfout
+    #
+    # Define the operations on members of the class.
+    # Supported operations : +, -, *
+    #
+    
+ 
+    def _action_add(self, Op1, Op2, wfin, side, **kwds):
+         wfout  = Op1.apply(wfin, side, **kwds) + Op2.apply(wfin, side, **kwds)
+         return wfout
 
+    def _action_sub(self, Op1, Op2, wfin, side, **kwds):
+         wfout  = Op1.apply(wfin, side, **kwds) - Op2.apply(wfin, side, **kwds)
+         return wfout
+
+    def _action_mul(self, Op1, Op2, wfin, side, **kwds):
+        
+         wfout = MeshFunction(np.zeros(wfin.mesh.np, dtype = wfin.dtype), wfin.mesh)
+         
+         if side == 'R':
+             wfout = Op2.apply(wfin , side, **kwds)
+             wfout = Op1.apply(wfout, side, **kwds)
+         else:
+             wfout = Op2.apply(wfin , side, **kwds)
+             wfout = Op1.apply(wfout, side, **kwds)            
+         
+         return wfout
+
+
+    #
+    # Operator info
+    #
+        
     def __str__(self):
         return self.symbol
 
-    def write_info(self, indent = 0):
+    def _write_inorder(self, tree, indent = 0):
+        if tree.leftChild:
+            self._write_inorder(tree.leftChild, indent = indent)
+        if isinstance(tree.key, Operator):
+            tree.key._write_details(indent)
+        if tree.rightChild:
+            self._write_inorder(tree.rightChild, indent = indent)
+    
+    def _write_details(self, indent = 0): 
         print_msg( "%s operator (%s): "%(self.name, self.symbol), indent = indent )       
         if self.formula != None:
             print_msg( "%s = %s "%(self.symbol, self.formula), indent = indent+1)    
         if self.info != None:
             print_msg( "info: %s "%(self.info), indent = indent+1)    
+            
+    def write_info(self, indent = 0):
+        self._write_details(indent = indent)
         # Write details of all the composing ops
         for Op in self.op_list:
             Op.write_info(indent = indent+1)
+        
+        self._write_inorder(self.expr, indent = indent+1)
 
     #
-    # Override operators + - *  on member of the class.
+    # Override operators: +, -, * .
     #
 
     def _is_scalar_element(self, x):
@@ -475,10 +599,12 @@ class Gradient(Operator):
         self.formula = 'd/dx'
         
         self.der = kwds.get('Der', Derivative(mesh, **kwds)) 
+    
+    def apply(self,wfin, side, **kwds): 
+        return self.der.perform(wfinR, degree = 1)        
         
     def applyRight(self, wfinR, **kwds): 
         return self.der.perform(wfinR, degree = 1)
-
 
     def write_info(self, indent = 0):
         super(Gradient,self).write_info(indent = indent)
@@ -501,7 +627,12 @@ class Laplacian(Operator):
             self.formula += '+ d^2/dz^2' 
         
         self.der = kwds.get('Der', Derivative(mesh, **kwds)) 
-        
+    
+    def apply(self,wfin, side, **kwds):     
+        if side == 'R':
+            return self.der.perform(wfin, degree = 2)
+        else: 
+            return self.applyRight(wfin.conjugate())              
                 
     def applyRight(self,wfinR, **kwds):        
         return self.der.perform(wfinR, degree = 2)
@@ -522,6 +653,10 @@ class Kinetic(Laplacian):
         self.name    = 'Kinetic'
         self.symbol  = 'T'
         self.formula = '1/2 \\nabla^2'
+    
+    
+    def apply(self, wfin, side, **kwds):
+        return -0.5*super(Kinetic,self).applyRight(wfin)    
         
     def applyRight(self, wfinR, **kwds): 
         return -0.5*super(Kinetic,self).applyRight(wfinR)
