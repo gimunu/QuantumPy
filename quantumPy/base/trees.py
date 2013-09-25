@@ -37,6 +37,7 @@ class BinaryTree:
         self.key = rootObj
         self.leftChild = None
         self.rightChild = None
+        self.parent = None
 
     def insertLeft(self,newNode):
         if self.leftChild == None:
@@ -45,6 +46,7 @@ class BinaryTree:
             t = BinaryTree(newNode) if not isinstance(newNode, BinaryTree) else newNode
             # t.left = self.leftChild
             self.leftChild = t
+        self.leftChild.parent = self    
     
     def insertRight(self,newNode):
         if self.rightChild == None:
@@ -53,15 +55,25 @@ class BinaryTree:
             t = BinaryTree(newNode) if not isinstance(newNode, BinaryTree) else newNode
             # t.right = self.rightChild
             self.rightChild = t
+        self.rightChild.parent = self    
 
     def isLeaf(self):
         return ((not self.leftChild) and (not self.rightChild))
 
+    def isRoot(self):
+        return not self.parent
+        
     def getRightChild(self):
         return self.rightChild
 
     def getLeftChild(self):
         return self.leftChild
+        
+    def getSibling(self):
+        if self.isRoot(): 
+            return None
+        Rsib = self.parent.getRightChild() 
+        return Rsib if Rsib != self else self.parent.getLeftChild()
 
     def hasChild(self):
         return (self.rightChild != None) or (self.leftChild != None) 
@@ -98,13 +110,18 @@ class BinaryTree:
             self.rightChild.preorder()
 
     def printexp(self):
-        if self.leftChild:
-            print'( '
-            self.leftChild.printexp()
-        print '%s '%self.key
-        if self.rightChild:
-            self.rightChild.printexp()
-            print') '
+        sVal = ""
+        if self:
+            sVal = '('  if self.hasChild() else ''
+            sVal += printexp(self.getLeftChild())
+            sVal = sVal + str(self.getRootVal())
+            sVal = sVal + printexp(self.getRightChild()) 
+            sVal += ')' if self.hasChild() else ''
+        return sVal
+
+    def __str__(self):
+        return self.printexp()
+
 
     def postordereval(self, opers = None):
         if not opers:
