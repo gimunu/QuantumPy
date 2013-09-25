@@ -166,8 +166,7 @@ class Operator(object):
             The function resulting from the operator application.
         
         """
-        print "called apply from %s (class %s)"%(self.expr, self.__class__.__name__)
-        
+
         _apply = self._applyLR(side)
         
         return _apply(self, wfin, **kwds)
@@ -242,9 +241,9 @@ class Operator(object):
         node2 = None
         if expr:
             node1 = expr.getRightChild()
-            print "node1 = %s"%node1
+            debug_msg("node1 = %s"%node1)
             node2 = node1.getSibling()
-            print "node2 = %s"%node2
+            debug_msg("node2 = %s"%node2)
             
             if   node1 == None:
                 raise Exception("Don't know what to do!")
@@ -264,8 +263,8 @@ class Operator(object):
             
 
             applym = getattr(self, opers[expr.getRootVal()])
-            print "return = %s %s %s"%(Op2.expr, expr.getRootVal(),Op1.expr )
-            print "----"
+            debug_msg("return = %s %s %s"%(Op2.expr, expr.getRootVal(),Op1.expr ))
+            debug_msg("----")
             return  applym(Op2, Op1, wf, side, **kwds)
                         
 
@@ -275,7 +274,7 @@ class Operator(object):
         """Left and Right application generation.
         
         """ 
-        print "called _applyLR from %s"%self.expr
+        debug_msg("called _applyLR from %s"%self.expr)
         
         if   side =='L':
             actionattr  = 'laction'
