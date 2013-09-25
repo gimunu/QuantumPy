@@ -140,10 +140,13 @@ class Derivative(object):
         elif degree == 2: 
             # Use Ask's    
             wfout = second_derivative(wfin, self.order, periodic= (self.bc == 'periodic'))
+            wfout = MeshFunction(wfout, mesh = wfin.mesh )
 
         else:
             raise Exception('Unavailable derivative of order >= 2. Order %s was given.'%(order))
 
+        assert (isinstance(wfout, wfin.__class__))
+        
         return wfout    
     
     def write_info(self, indent = 0):        
