@@ -50,7 +50,7 @@ class Propagator(Operator):
         self.method = kwds.get('Method', 'exponential')
         
         
-    def applyRight(self, wfinR, **kwds):
+    def apply(self, wfinR, side = 'R', **kwds):
 
         dt   = kwds.get('dt', 0.01)
         time = kwds.get('time', 0.0)
