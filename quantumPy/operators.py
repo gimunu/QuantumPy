@@ -71,7 +71,7 @@ class Operator(object):
         self.info    = kwds.get('info'   , None)
         
         self.op_list = kwds.get('Operators', [])
-        self.expr = trees.BinaryTree(self)
+        self.expr = BinaryTree(self)
         
         self.hermitian = True
         self.raction = None
@@ -301,8 +301,8 @@ class Operator(object):
     def write_info(self, indent = 0):
         self._write_details(indent = indent)
         # Write details of all the composing ops
-        for Op in self.op_list:
-            Op.write_info(indent = indent+1)
+        # for Op in self.op_list:
+        #     Op.write_info(indent = indent+1)
         
         self._write_inorder(self.expr, indent = indent+1)
 
@@ -477,15 +477,17 @@ def exponential(Opin, order = 4, exp_step = 1.0):
 
         
     Op = Operator()
+            
+    Op.action(get_action('L'), 'L')    
+    Op.action(get_action('R'), 'R') 
+
     Op.name    = 'Exponential'
     Op.symbol  = 'Exp'
     Op.formula = 'exp(%s)'%Opin.symbol
+    Op.info    = '%s = %s'%(Opin.symbol, Opin.formula)
     
     #Needed for write_info()
-    Op.op_list = [Opin]
-        
-    Op.action(get_action('L'), 'L')    
-    Op.action(get_action('R'), 'R') 
+    Op.expr = Opin.expr
        
     return Op
     
