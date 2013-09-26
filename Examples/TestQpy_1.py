@@ -70,7 +70,7 @@ print "* <P> = %12.6f" % ( (- 1j * Grad.expectationValue(wf)).real)
 #  <T> = 5/4 <P>^2/2 (= 10 for our gaussian with k = 4 )
 #
 # T = qp.system.operators.Kinetic(box, Strategy = 'fd', Order = 1, Bc = 'periodic')
-T = qp.operators.Kinetic(box, Strategy = 'fd', Order = 4, Bc = 'zero')
+T = qp.Kinetic(box, Strategy = 'fd', Order = 4, Bc = 'zero')
 print "* <T> = %12.6f" % (T.expectationValue(wf).real)
 
 
