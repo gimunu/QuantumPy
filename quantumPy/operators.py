@@ -17,11 +17,12 @@
 
 from __future__ import division
 
-__all__ = ['Operator', 'Laplacian', 'Gradient', 'Kinetic', 'identity',
-           'scalar_pot' , 'Hamiltonian', 'exponential']
+__all__ = ['Operator', 'Laplacian', 'Gradient', 'Kinetic', 'kinetic', 'identity',
+           'scalar_pot' , 'hamiltonian', 'exponential']
 
 import inspect
 import types
+import copy
 import numpy as np
 from scipy.misc import factorial
 from .base import *
@@ -79,7 +80,7 @@ class Operator(object):
         
         self.update()
     
-    def action(self, funct, key = 'LR'):
+    def set_action(self, funct, key = 'LR'):
         """Define Operator action.
          
         """
@@ -172,6 +173,34 @@ class Operator(object):
         return _apply(self, wfin, **kwds)
 
     
+    def _applyLR(self, side):
+        """Left and Right application generation.
+        
+        """ 
+        debug_msg("called _applyLR (side = %s) from %s"%(side, self.expr))
+        
+        if   side =='L':
+            actionattr  = 'laction'
+        elif side == 'R':    
+            actionattr  = 'raction'
+        else:
+            raise Exception('Unrecognized action %s'%side)
+        
+        def actionLR(self, wfin, **kwds):
+
+            wfout = MeshFunction(np.zeros(wfin.mesh.np, dtype = wfin.dtype), wfin.mesh)
+
+            if getattr(self, actionattr):
+                action = getattr(self, actionattr)
+                wfout = action(wfin, **kwds)
+            else:
+                wfout = self._evaluate(self.expr, wfin, side, **kwds)
+        
+            return wfout
+
+        return actionLR
+        
+ 
                         
     def _evaluate(self, expr, wf, side, **kwds):
         """Evaluates the algebraic expression containing operators. 
@@ -193,7 +222,7 @@ class Operator(object):
         
         opers = {'+':'_action_add', '-':'_action_sub', '*':'_action_mul'}
         
-        debug_msg("---- _evaluate (%s) "%side)
+        debug_msg("---- _evaluate = %s [form %s] "%(expr, side))
         
         def get_operator_from(node):
             if   node == None:
@@ -221,57 +250,42 @@ class Operator(object):
             else: 
                 raise Exception("Which side is `%s'?"%side)
             
-            debug_msg("nodeL = %s"%nodeL)
-            debug_msg("nodeR = %s"%nodeR)
+            debug_msg("nodeL = %s - [parent = %s]"%(nodeL, nodeL.parent))
+            debug_msg("nodeR = %s - [parent = %s]"%(nodeR, nodeR.parent))
             
             OpL = get_operator_from(nodeL)
             OpR = get_operator_from(nodeR)            
 
             operation = getattr(self, opers[expr.getRootVal()])
-            debug_msg("return = %s %s %s"%(OpL.expr, expr.getRootVal(),OpR.expr ))
+            debug_msg("perform: %s %s %s"%(OpL.expr, expr.getRootVal(),OpR.expr ))
             debug_msg("----")
             return  operation(OpL, OpR, wf, side, **kwds)
-                        
-
                     
     
-    def _applyLR(self, side):
-        """Left and Right application generation.
-        
-        """ 
-        debug_msg("called _applyLR (side = %s) from %s"%(side, self.expr))
-        
-        if   side =='L':
-            actionattr  = 'laction'
-        elif side == 'R':    
-            actionattr  = 'raction'
-        else:
-            raise Exception('Unrecognized action %s'%side)
-        
-        def actionLR(self, wfin, **kwds):
-
-            wfout = MeshFunction(np.zeros(wfin.mesh.np, dtype = wfin.dtype), wfin.mesh)
-
-            if getattr(self, actionattr):
-                action = getattr(self, actionattr)
-                wfout = action(wfin, **kwds)
-            else:
-                wfout = self._evaluate(self.expr, wfin, side, **kwds)
-        
-            return wfout
-
-        
-        return actionLR
-        
-    
- 
     def _action_add(self, OpL, OpR, wfin, side, **kwds):
-         wfout  = OpL.apply(wfin, side, **kwds) + OpR.apply(wfin, side, **kwds)
+         # Note: the order of application of the operators is important
+         # as it defines the starting point in the recursive evaluation 
+         # of the expression tree.         
+         if side == 'R':
+             wfout  = OpR.apply(wfin , side, **kwds)
+             wfout += OpL.apply(wfin, side, **kwds)
+         else:
+             wfout  = OpL.apply(wfin , side, **kwds)
+             wfout += OpR.apply(wfin, side, **kwds)            
+         
          return wfout
+
 
     def _action_sub(self, OpL, OpR, wfin, side, **kwds):
-         wfout  = OpL.apply(wfin, side, **kwds) - OpR.apply(wfin, side, **kwds)
+         if side == 'R':
+             wfout  = OpR.apply(wfin , side, **kwds)
+             wfout -= OpL.apply(wfin, side, **kwds)
+         else:
+             wfout  = OpL.apply(wfin , side, **kwds)
+             wfout -= OpR.apply(wfin, side, **kwds)            
+
          return wfout
+
 
     def _action_mul(self, OpL, OpR, wfin, side, **kwds):
         
@@ -304,9 +318,9 @@ class Operator(object):
     
     def _write_details(self, indent = 0): 
         print_msg( "%s operator (%s): "%(self.name, self.symbol), indent = indent )       
-        if self.formula != None:
+        if self.formula:
             print_msg( "%s = %s "%(self.symbol, self.formula), indent = indent+1)    
-        if self.info != None:
+        if self.info:
             print_msg( "info: %s "%(self.info), indent = indent+1)    
             
     def write_info(self, indent = 0):
@@ -336,7 +350,6 @@ class Operator(object):
         
         if self._is_scalar_element(other):
             other = scalar(other)
-        
         elif not isinstance(other, Operator):
             raise TypeError("Cannot perform '%s' and type %s" %(operation, type(other)))
             
@@ -344,13 +357,21 @@ class Operator(object):
         Op.name    = 'Composed-operator'
         Op.symbol  = 'O'
         
+        # If the expression contain two (or more) times an operator
+        # this may cause loops or broken branches in the tree caused by 
+        # Op.expr being the same for different nodes. 
+        # In order to avoid it we perform a deepcopy of each Operator in the 
+        # expression. 
         Op.expr.setRootVal(operation)
         if reverse:
-            Op.expr.insertRight(self.expr)
-            Op.expr.insertLeft(other.expr)
+            Op.expr.insertRight(copy.deepcopy(self.expr))
+            Op.expr.insertLeft( copy.deepcopy(other.expr))
         else:    
-            Op.expr.insertLeft(self.expr)
-            Op.expr.insertRight(other.expr)
+            Op.expr.insertLeft( copy.deepcopy(self.expr))
+            Op.expr.insertRight(copy.deepcopy(other.expr))
+        print "%s --self.expr  %s -- [P: %s]"%(operation,  self.expr, self.expr.parent)
+
+        print "%s --other.expr  %s -- [P: %s]"%(operation,  other.expr, other.expr.parent)
 
         Op.update()        
         return Op
@@ -382,7 +403,15 @@ class Operator(object):
 
 
 #############################################
-#  Library of operators
+#  Library of Operators
+#  --------------------
+#
+#  How do I create new operators?
+#
+#  There are basically two way one can follow in order to create new operators:
+#  1. Subclassing Operator class.
+#  2. Define a function returning an Operator instance.
+#
 #############################################
 
 
@@ -397,7 +426,7 @@ def identity():
     Op.symbol  = 'I'
     Op.formula = '1'
         
-    Op.action(action, 'LR')    
+    Op.set_action(action, 'LR')    
     return Op
 
 #------------------------------------------------------
@@ -412,7 +441,7 @@ def scalar(val):
     Op.symbol  = str(val)
     Op.formula = str(val)
         
-    Op.action(action, 'LR')    
+    Op.set_action(action, 'LR')    
     return Op
 
 
@@ -430,7 +459,7 @@ def scalar_pot(func):
     Op.formula = ''
     Op.info = '\n'+inspect.getsource(func)
         
-    Op.action(action, 'LR')    
+    Op.set_action(action, 'LR')    
     return Op
 
 
@@ -489,8 +518,8 @@ def exponential(Opin, order = 4, exp_step = 1.0):
         
     Op = Operator()
             
-    Op.action(get_action('L'), 'L')    
-    Op.action(get_action('R'), 'R') 
+    Op.set_action(get_action('L'), 'L')    
+    Op.set_action(get_action('R'), 'R') 
 
     Op.name    = 'Exponential'
     Op.symbol  = 'Exp'
@@ -502,6 +531,23 @@ def exponential(Opin, order = 4, exp_step = 1.0):
        
     return Op
     
+#------------------------------------------------------
+def kinetic(mesh, **kwds):
+    """Kinetic operator"""
+           
+    T = -0.5 * Laplacian(mesh, **kwds)
+    
+    # def action(wf, side = 'LR', **kwds):
+    #      print "well well"
+    #      return  -0.5 * T.raction(wf, side=side, **kwds)    
+    #      
+    # T.set_action(action, 'LR')  
+
+    T.name    = 'Kinetic'
+    T.symbol  = 'T'
+    T.formula = '-1/2 \\nabla^2'
+        
+    return T
 
 
 #------------------------------------------------------
@@ -515,12 +561,12 @@ class Gradient(Operator):
         
         self.der = kwds.get('Der', Derivative(mesh, **kwds)) 
     
-    def apply(self,wfin, side='R', **kwds): 
+    def apply(self,wfin, side='LR', **kwds): 
         return self.der.perform(wfin, degree = 1)        
         
-    def write_info(self, indent = 0):
-        super(Gradient,self).write_info(indent = indent)
-        self.der.write_info(indent = indent)
+    def _write_details(self, indent = 0):
+        super(Gradient,self)._write_details(indent = indent)
+        self.der.write_info(indent = indent+1)
         
 
 
@@ -540,15 +586,12 @@ class Laplacian(Operator):
         
         self.der = kwds.get('Der', Derivative(mesh, **kwds)) 
     
-    def apply(self,wfin, side='R', **kwds):     
-        if side == 'R':
-            return self.der.perform(wfin, degree = 2)
-        else: 
-            return self.apply(wfin.conjugate(), side='R', **kwds)              
+    def apply(self,wfin, side='LR', **kwds):
+        return self.der.perform(wfin, degree = 2)
                 
-    def write_info(self, indent = 0):        
-        super(Laplacian,self).write_info(indent)
-        self.der.write_info(indent = indent)
+    def _write_details(self, indent = 0):        
+        super(Laplacian,self)._write_details(indent)
+        self.der.write_info(indent = indent+1)
 
 
 #------------------------------------------------------
@@ -558,29 +601,25 @@ class Kinetic(Laplacian):
         super(Kinetic,self).__init__(mesh, **kwds)
         self.name    = 'Kinetic'
         self.symbol  = 'T'
-        self.formula = '1/2 \\nabla^2'
+        self.formula = '-1/2 \\nabla^2'
     
     
-    def apply(self, wfin, side = 'R', **kwds):
+    def apply(self, wfin, side='LR', **kwds):
         return -0.5*super(Kinetic,self).apply(wfin, side = side, **kwds)    
     
 
 
 #------------------------------------------------------
-class Hamiltonian(Operator):
-    """Hamiltonian operator.
+def hamiltonian(mesh, **kwds):
+    """Creates an Hamiltonian operator.
     
-    Utility class to create an Hamiltonian.
-    
-    Attributes
-    ----------
-    time : float
-        Current time. Used when a time-dependent term is included.
-    
+    Utility to create an Hamiltonian.
+        
     """
-    def __init__(self, **kwds):
-        super(Hamiltonian, self).__init__(**kwds)
-        self.name   = "Hamiltonian"
-        self.symbol = "H"
-        self.time = kwds.get('Time', 0.0)
+
+    T = kinetic(mesh, **kwds)
+
+    H = T 
+
+    return H
         
