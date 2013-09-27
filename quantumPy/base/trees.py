@@ -122,6 +122,23 @@ class BinaryTree:
     def __str__(self):
         return self.printexp()
 
+    def hasLeftChild(self):
+        return self.leftChild
+
+    def hasRightChild(self):
+        return self.rightChild
+
+    def __iter__(self):
+        """The standard inorder traversal of a binary tree."""
+        if self:
+            if self.hasLeftChild():
+                for elem in self.leftChild:
+                    yield elem
+            yield self.key
+            if self.hasRightChild():
+                for elem in self.rightChild:
+                    yield elem
+
 
     def postordereval(self, opers = None):
         if not opers:
