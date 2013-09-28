@@ -279,26 +279,19 @@ class Operator(object):
              wfout  = OpL.apply(wfin, side, **kwds)
              wfout += OpR.apply(wfin, side, **kwds)
             
-         
-         # print "out _action_add: < + >=%s "%(wfin.conjugate()*wfout).integrate()        
          return wfout
 
 
     def _action_sub(self, OpL, OpR, wfin, side, **kwds):
          print "in  _action_sub: |wfin|^2=%s "%(wfin.conjugate()*wfin).integrate()        
-
          if side == 'R':
              wfout  = - OpR.apply(wfin, side, **kwds)
              print "outR _action_sub: 1 < -%s > = %s "%(OpR.expr, (wfin.conjugate()*wfout).integrate())        
-             # print "                                %s "%(wfout[20:21])        
              wfout += OpL.apply(wfin, side, **kwds)
-             print "outL _action_sub: 2 < %s - %s > = %s "%(OpL.expr,OpR.expr, (wfin.conjugate()*wfout).integrate())        
-             # print "                                %s "%(wfout[20:21])        
+             print "outL _action_sub: 2 < %s - %s > = %s "%(OpL.expr,OpR.expr, (wfin.conjugate()*wfout).integrate())
          else:
              wfout  = OpL.apply(wfin, side, **kwds)
              wfout -= OpL.apply(wfin, side, **kwds)
-        
-         # print "out _action_sub: < - >= %s "%(wfin.conjugate()*wfout).integrate()        
          return wfout
 
 
@@ -384,9 +377,6 @@ class Operator(object):
         else:    
             Op.expr.insertLeft(  cself.expr)
             Op.expr.insertRight(cother.expr)
-        print "%s --self.expr  %s -- [P: %s]"%(operation,  cself.expr, cself.expr.parent)
-
-        print "%s --other.expr  %s -- [P: %s]"%(operation,  cother.expr, cother.expr.parent)
 
         Op.update()        
         return Op
