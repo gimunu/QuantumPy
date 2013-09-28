@@ -210,14 +210,13 @@ class Operator(object):
         
         """
         # This is the main method that evaluates the tree expression.
-        # It is recursive with a loop spanning different methods.
+        # It is recursive with a loop cycle spanning different methods.
         # This is the loop:
         # 1. apply()
         # 2. _applyLR()
         # 3. _evaluate
         # 4. _action_[add, sub, mul]()
-        # in point 4 there is explicit reference to apply() (point 1)
-        # and the loop closes.
+        # in point 4 a call to to apply() (cfr. 1.) closes the loop.
         
         
         opers = {'+':'_action_add', '-':'_action_sub', '*':'_action_mul'}
@@ -269,12 +268,12 @@ class Operator(object):
          # For instance if we want to evaluate from right we always need to 
          # apply to the right operator before the left one.
 
-         print "in  _action_add: |wf|^2=%s"%(wfin.conjugate()*wfin).integrate()        
+         debug_msg("in  _action_add: |wf|^2=%s"%(wfin.conjugate()*wfin).integrate())        
          if side == 'R':
              wfout  = OpR.apply(wfin, side, **kwds)
-             print "outR _action_add: 1 < %s > = %s "%(OpR.expr, (wfin.conjugate()*wfout).integrate())        
+             debug_msg ("outR _action_add: 1 < %s > = %s "%(OpR.expr, (wfin.conjugate()*wfout).integrate()))        
              wfout += OpL.apply(wfin, side, **kwds)
-             print "outL _action_add: 2 < %s + %s > = %s "%(OpL.expr, OpR.expr, (wfin.conjugate()*wfout).integrate())        
+             debug_msg("outL _action_add: 2 < %s + %s > = %s "%(OpL.expr, OpR.expr, (wfin.conjugate()*wfout).integrate()))        
          else:
              wfout  = OpL.apply(wfin, side, **kwds)
              wfout += OpR.apply(wfin, side, **kwds)
@@ -283,12 +282,12 @@ class Operator(object):
 
 
     def _action_sub(self, OpL, OpR, wfin, side, **kwds):
-         print "in  _action_sub: |wfin|^2=%s "%(wfin.conjugate()*wfin).integrate()        
+         debug_msg ("in  _action_sub: |wfin|^2=%s "%(wfin.conjugate()*wfin).integrate())        
          if side == 'R':
              wfout  = - OpR.apply(wfin, side, **kwds)
-             print "outR _action_sub: 1 < -%s > = %s "%(OpR.expr, (wfin.conjugate()*wfout).integrate())        
+             debug_msg("outR _action_sub: 1 < -%s > = %s "%(OpR.expr, (wfin.conjugate()*wfout).integrate()))        
              wfout += OpL.apply(wfin, side, **kwds)
-             print "outL _action_sub: 2 < %s - %s > = %s "%(OpL.expr,OpR.expr, (wfin.conjugate()*wfout).integrate())
+             debug_msg("outL _action_sub: 2 < %s - %s > = %s "%(OpL.expr,OpR.expr, (wfin.conjugate()*wfout).integrate()))
          else:
              wfout  = OpL.apply(wfin, side, **kwds)
              wfout -= OpL.apply(wfin, side, **kwds)
@@ -296,7 +295,7 @@ class Operator(object):
 
 
     def _action_mul(self, OpL, OpR, wfin, side, **kwds):
-         print "_action_mul: |wf|^2=%s"%(wfin.conjugate()*wfin).integrate()        
+         debug_msg ("_action_mul: |wf|^2=%s"%(wfin.conjugate()*wfin).integrate())        
          
          if side == 'R':
              wfout = OpR.apply(wfin , side, **kwds)
