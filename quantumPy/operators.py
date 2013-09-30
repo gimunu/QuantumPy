@@ -84,7 +84,7 @@ class Operator(object):
         """Define Operator action.
          
         """
-        if (key =='LR'):
+        if (key =='LR' or key == 'RL'):
             self.raction = funct
             self.laction = funct
         elif (key == 'L'):
