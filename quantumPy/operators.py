@@ -95,7 +95,14 @@ class Operator(object):
             raise Exception
 
         self.update()    
-
+        
+    def get_action(self, key):    
+        if   key == 'R':
+            return self.raction
+        elif key == 'L':    
+            return self.laction
+        else:
+            raise Exception    
              
     def update(self):
         """Update the internal attributes.
@@ -221,7 +228,7 @@ class Operator(object):
         
         opers = {'+':'_action_add', '-':'_action_sub', '*':'_action_mul'}
         
-        debug_msg("---- _evaluate = %s [form %s] "%(expr, side))
+        debug_msg("---- _evaluate = %s [side %s] "%(expr, side))
         
         def get_operator_from(node):
             if   node == None:
@@ -529,9 +536,6 @@ def exponential(Opin, order = 4, exp_step = 1.0):
     Op.symbol  = 'Exp'
     Op.formula = 'exp(%s)'%Opin.symbol
     Op.info    = '%s = %s'%(Opin.symbol, Opin.formula)
-    
-    #Needed for write_info()
-    Op.expr = Opin.expr
        
     return Op
 
