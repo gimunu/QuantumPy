@@ -85,13 +85,13 @@ def exp(wf, Hop, time, dt, order = 4 ):
         
     return Uwf             
     
-def propagator(H, method = 'exp', dt = 0.1, **kwds ):
+def propagator(H, method = 'etrs', dt = 0.1, **kwds ):
     
     U = None
     if   method == 'exp':
         U = td_exp(H, order = kwds.get('exp_order', 4), dt = dt)
     elif method == 'etrs':    
-        pass
+        U = td_etrs(H, order = kwds.get('exp_order', 4), dt = dt)
     else:
         raise Exception("Unrecognized evolution method `%s'."%method)
         
@@ -105,8 +105,10 @@ def td_exp(H, order = 4, dt = 0.01):
         
     U = exponential(H, order = order, exp_step = dt)
 
+    # wraps around exponential to set the step in the 
+    # Taylor expansion dh = -i * dt
     uraction = U.raction
-    def raction(wf, **kwds):        
+    def raction(wf, **kwds):
         kwds['exp_step']= -1j * kwds.get('dt', dt)  
         return uraction(wf, **kwds)
 
@@ -120,9 +122,51 @@ def td_exp(H, order = 4, dt = 0.01):
     U.set_action(raction, 'R')
     
     U.name    = 'Exponential propagation'
-    # Op.symbol  = 'Exp'
-    # Op.formula = 'exp(%s)'%Opin.symbol
-    # Op.info    = '%s = %s'%(Opin.symbol, Opin.formula)
+    U.symbol  = 'U_exp'
+    U.formula = 'exp{-i dt %s(t)}'%(H.symbol)
 
     return U
-        
+
+#------------------------------------------
+
+def td_etrs(H, order = 4, dt = 0.01):
+    """Creates a time-reversal-symmetry (ETRS) based propagation Operator.
+    
+    ...
+    
+    
+    Notes
+    -----
+    The ETRS operator is defined as:
+    
+    U_{ETRS}= \exp{\i \Delta t H(t+\Delta t)} \exp{-i \Delta t H(t)}     
+    """
+    
+    ExpT   = td_exp(H, order = order, dt = dt)    
+    expraction1 = ExpT.get_action('R') 
+    def expTraction(wf, **kwds):
+        #exp(-i dt/2 H(t))
+        kwds['dt']= kwds.get('dt', dt)  
+        kwds['time']=  kwds.get('time', 0.0)   
+        return expraction1(wf, **kwds)
+    ExpT.set_action(expTraction, 'R') 
+            
+    
+    ExpTdT = td_exp(H, order = order, dt = dt)
+    expraction2 = ExpTdT.get_action('R') 
+    def expTdTraction(wf, **kwds):
+        #exp(-i dt/2 H(t+dt))
+        _dt = kwds.get('dt', dt)  
+        kwds['dt']=  _dt/2.0
+        kwds['time']=  kwds.get('time', 0.0) + _dt  
+        return expraction2(wf, **kwds)
+    ExpTdT.set_action(expTdTraction, 'R') 
+    
+    U = ExpTdT * ExpT 
+    
+    U.name = "ETRS propagation"
+    U.symbol  = 'U_etrs'
+    U.formula = 'exp{-i dt/2 %s(t+dt)} * exp{-i dt/2 %s(t)}'%(H.symbol, H.symbol)
+    U.info    = '%s = %s'%(H.symbol, H.formula)
+    
+    return U   
