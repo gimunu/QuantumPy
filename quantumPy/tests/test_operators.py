@@ -42,7 +42,6 @@ def test_expression():
     Owf = O.expectationValue(wf)
     # print "<wf|O|wf>  = %s"%Owf  
     assert_almost_equal(Owf, 1.0)  
-    # assert_almost_equal(Owf.imag, 0.0)
 
 
 def test_kinetic():
@@ -63,10 +62,3 @@ def test_kinetic():
     assert_almost_equal(Tfd.expectationValue(wf), 9.99997705) 
     
     
-    
-
-def main():
-    test_expression()
-    
-if __name__ == '__main__':
-    main()
