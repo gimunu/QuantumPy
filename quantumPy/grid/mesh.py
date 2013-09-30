@@ -260,16 +260,12 @@ class Cube(Mesh):
             xmax = np.amax(self.mesh.points, 0)
             xmin = np.amin(self.mesh.points, 0)
             
-            kmax = np.pi/self.mesh.spacing
             dk = 2.0*np.pi/np.abs(xmax-xmin)
 
             self.FSspacing = dk 
-            # self.FSpoints  = np.arange(- kmax, kmax + dk, dk) 
             nn = self.mesh.np
             self.FSpoints = np.fft.fftfreq(nn, d =1/(dk*nn)) 
             self.FSpoints = np.fft.fftshift(self.FSpoints)
-            print self.mesh.points.size
-            print self.FSpoints 
              
             self.FSsize    = np.array([np.amin(self.FSpoints, 0),np.amax(self.FSpoints, 0)])
             
