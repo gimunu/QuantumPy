@@ -508,7 +508,7 @@ def exponential(Opin, order = 4, exp_step = 1.0):
     
     def get_action(side):
         def action(wf, **kwds):
-            dh = kwds.get('exp_step', 1.0)
+            dh = kwds.get('exp_step', exp_step)
             Opinwf = wf.copy()
             Uwf = MeshFunction(np.zeros(wf.mesh.np, dtype = complex), wf.mesh)
             Uwf[:] = 0.0
@@ -534,6 +534,27 @@ def exponential(Opin, order = 4, exp_step = 1.0):
     Op.expr = Opin.expr
        
     return Op
+
+#------------------------------------------------------
+def hamiltonian(mesh, vext = None, **kwds):
+    """Creates an Hamiltonian operator.
+    
+    Utility to create an Hamiltonian.
+        
+    """
+
+    T = kinetic(mesh, **kwds)
+    H = T
+    
+    if vext:
+        Vext = scalar_pot(vext)
+        H += Vext
+
+    H.name    = 'Hamiltonian'
+    H.symbol  = 'H'        
+
+    return H
+        
     
 #------------------------------------------------------
 def kinetic(mesh, **kwds):
@@ -613,19 +634,3 @@ class Kinetic(Laplacian):
     
 
 
-#------------------------------------------------------
-def hamiltonian(mesh, vext, **kwds):
-    """Creates an Hamiltonian operator.
-    
-    Utility to create an Hamiltonian.
-        
-    """
-
-    T = kinetic(mesh, **kwds)
-    
-    Vext = scalar_pot(vext)
-
-    H = T + Vext
-
-    return H
-        
