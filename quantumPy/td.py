@@ -17,7 +17,7 @@
 
 from __future__ import division
 
-__all__=['Propagator']
+__all__=['Propagator', 'propagator']
 
 import numpy as np
 from .base import *
@@ -84,3 +84,45 @@ def exp(wf, Hop, time, dt, order = 4 ):
         Hwf = Hop.apply(Hwf)
         
     return Uwf             
+    
+def propagator(H, method = 'exp', dt = 0.1, **kwds ):
+    
+    U = None
+    if   method == 'exp':
+        U = td_exp(H, order = kwds.get('exp_order', 4), dt = dt)
+    elif method == 'etrs':    
+        pass
+    else:
+        raise Exception("Unrecognized evolution method `%s'."%method)
+        
+    return U    
+
+###########################################    
+# Propagators
+###########################################
+
+def td_exp(H, order = 4, dt = 0.01):
+        
+    U = exponential(H, order = order, exp_step = dt)
+
+    uraction = U.raction
+    def raction(wf, **kwds):        
+        kwds['exp_step']= -1j * kwds.get('dt', dt)  
+        return uraction(wf, **kwds)
+
+    ulaction = U.laction
+    def laction(wf, **kwds):
+        kwds['exp_step']= -1j * kwds.get('dt', dt)  
+        return ulaction(wf, **kwds)
+
+            
+    U.set_action(laction, 'L')    
+    U.set_action(raction, 'R')
+    
+    U.name    = 'Exponential propagation'
+    # Op.symbol  = 'Exp'
+    # Op.formula = 'exp(%s)'%Opin.symbol
+    # Op.info    = '%s = %s'%(Opin.symbol, Opin.formula)
+
+    return U
+        
