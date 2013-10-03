@@ -43,6 +43,24 @@ _fd_weight['2_5p_c']=[-1./12., 4./3., -5./2., 4./3., -1./12.]
 _fd_weight['2_7p_c']=[1./90., -3./20., 3./2., 49./18., 3./2., -3./20., 1./90.]
 _fd_weight['2_9p_c']=[-1./560., 8./315.,-1./5., 8./5., -205./72., 8./5., -1./5., 8./315., -1./560.]
 
+_stencils = [[0.],
+
+            [[0.],
+            [0., 1./2.],
+            [0., 2./3., -1./2.],
+            [0., 3./4., -3./20., -1./60.],
+            [0., 4./5., -1./5., 4./105., -1./280.]],
+
+            [[0.],
+            [-2., 1.],
+            [-5./2., 4./3., -1./12.],
+            [-49./18., 3./2., -3./20., 1./90.],
+            [-205./72., 8./5., -1./5., 8./315., -1./560.],
+            [-5269./1800., 5./3., -5./21., 5./126., -5./1008., 1./3150.],
+            [-5369./1800., 12./7., -15./56., 10./189., -1./112., 2./1925., -1./16632.]]]
+
+            # [-5269./1800., 5./3., -5./21., 5./126., -5./1008., 1./3150.],
+            # [-5369./1800., 12./7., -15./56., 10./189., -1./112., 2./1925., -1./16632.]],
 
 class Derivative(object):
     """Numerical derivative class.
@@ -121,7 +139,7 @@ class Derivative(object):
             raise Exception('Unavailable derivative of order %s.'%(order))
 
         elif degree == 0:    
-            return wfin
+            return wfin.copy()
 
         elif degree == 1: 
             wfout = wfin.copy()
@@ -138,9 +156,43 @@ class Derivative(object):
             wfout /= mesh.spacing**(degree)        
 
         elif degree == 2: 
-            # Use Ask's    
-            wfout = second_derivative(wfin, self.order, periodic= (self.bc == 'periodic'))
-            wfout = MeshFunction(wfout, mesh = wfin.mesh )
+            wfout = wfin.copy()
+            wfout[:] = 0.0
+            
+            n1 = mesh.np
+            dh = mesh.spacing
+            sp =  int(self.order + 1) # number of stencil points
+            st_deg = _stencils[degree]
+            stencil = st_deg[self.order]
+            #inner region
+            for ii in range(sp - 1, n1 - sp):
+                wfout[ii] += wfin[ii] * stencil[0]
+                for jj in range(1, sp):
+                    wfout[ii] += (wfin[ii + jj] + wfin[ii - jj]) * stencil[jj]
+            
+            #boundaries
+            # if self.bc.lower() == 'zero':
+            #     for ii in range(sp - 1):
+            #         II = n1 - ii -1
+            #         wfout[ii] += wfin[ii] * stencil[0]
+            #         # wfout[II] += wfin[II] * stencil[0]
+            #         for jj in range(1, sp): 
+            #             wfout[ii] += wfin[ii + jj] * stencil[jj]
+            #             # wfout[II] += wfin[II - jj] * stencil[jj]
+            #         for jj in range(1, sp-ii): 
+            #             wfout[ii] += wfin[ii - jj] * stencil[jj]
+            #             # wfout[II] += wfin[II + jj] * stencil[jj]
+            #     
+            # elif self.bc.lower() == 'periodic':    
+            #     raise NotImplementedError
+            
+                            
+            wfout /= dh**(degree)        
+            
+            
+            # # Use Ask's    
+            # wfout = second_derivative(wfin, self.order, periodic= (self.bc == 'periodic'))
+            # wfout = MeshFunction(wfout, mesh = wfin.mesh )
 
         else:
             raise Exception('Unavailable derivative of order >= 2. Order %s was given.'%(order))
