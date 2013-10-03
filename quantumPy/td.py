@@ -145,9 +145,9 @@ def td_etrs(H, order = 4, dt = 0.01):
     ExpT   = td_exp(H, order = order, dt = dt)    
     expraction1 = ExpT.get_action('R') 
     def expTraction(wf, **kwds):
-        #exp(-i dt/2 H(t))
+        #exp(-i dt/2 H(t - dt))
         kwds['dt']= kwds.get('dt', dt)/2.0  
-        kwds['time']=  kwds.get('time', 0.0)   
+        kwds['time']=  kwds.get('time', 0.0) - dt   
         return expraction1(wf, **kwds)
     ExpT.set_action(expTraction, 'R') 
             
@@ -155,10 +155,10 @@ def td_etrs(H, order = 4, dt = 0.01):
     ExpTdT = td_exp(H, order = order, dt = dt)
     expraction2 = ExpTdT.get_action('R') 
     def expTdTraction(wf, **kwds):
-        #exp(-i dt/2 H(t+dt))
+        #exp(-i dt/2 H(t))
         _dt = kwds.get('dt', dt)  
         kwds['dt']=  _dt/2.0
-        kwds['time']=  kwds.get('time', 0.0) + _dt  
+        kwds['time']=  kwds.get('time', 0.0)   
         return expraction2(wf, **kwds)
     ExpTdT.set_action(expTdTraction, 'R') 
     
