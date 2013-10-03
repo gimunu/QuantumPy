@@ -516,13 +516,14 @@ def exponential(Opin, order = 4, exp_step = 1.0):
     def get_action(side):
         def action(wf, **kwds):
             dh = kwds.get('exp_step', exp_step)
-            Opinwf = wf.copy()
-            Uwf = MeshFunction(np.zeros(wf.mesh.np, dtype = complex), wf.mesh)
-            Uwf[:] = 0.0
-            for i in range(order):
-                Uwf +=  Opinwf * (dh)**i / factorial(i)
-                Opinwf = Opin.apply(Opinwf, side, **kwds)        
-            return Uwf
+            wf1 = wf.copy()
+            factor = 1
+            for i in range(1, order + 1):
+                factor *=  dh / i
+                Opinwf = Opin.apply(wf1, side, **kwds)
+                wf = factor*Opinwf + wf 
+                wf1 = Opinwf       
+            return wf.copy()
 
         return action
 
@@ -550,12 +551,15 @@ def hamiltonian(mesh, vext = None, **kwds):
     T = kinetic(mesh, **kwds)
     H = T
     
+    Vext = None
     if vext:
         Vext = scalar_pot(vext)
         H += Vext
 
     H.name    = 'Hamiltonian'
     H.symbol  = 'H'        
+    H.kinetic = T
+    H.vext = Vext 
 
     return H
         
