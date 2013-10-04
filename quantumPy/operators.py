@@ -520,9 +520,8 @@ def exponential(Opin, order = 4, exp_step = 1.0):
             factor = 1
             for i in range(1, order + 1):
                 factor *=  dh / i
-                Opinwf = Opin.apply(wf1, side, **kwds)
-                wf = factor*Opinwf + wf 
-                wf1 = Opinwf       
+                wf1 = Opin.apply(wf1, side, **kwds)
+                wf = factor*wf1 + wf 
             return wf.copy()
 
         return action
