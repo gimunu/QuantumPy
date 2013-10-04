@@ -141,47 +141,62 @@ class Derivative(object):
         elif degree == 0:    
             return wfin.copy()
 
-        elif degree == 1: 
-            wfout = wfin.copy()
-            wfout[:] = 0.0
-            
-            if self.bc.lower() == 'periodic':    
-                raise NotImplementedError
-            n1 = mesh.np
-            sp =  2*self.order + 1 # number of stencil points
-            stname = '%d_%dp_c'%(degree, sp) # pick the appropriate weights   
-            for ii in range(int(sp/2), n1 - int(sp/2)):
-                for jj in range(sp):
-                    wfout[ii] += wfin[ii - int(sp/2) + jj] * _fd_weight[stname][jj]
-            wfout /= mesh.spacing**(degree)        
+        # elif degree == 1  or degree == 2: 
+        #     wfout = wfin.copy()
+        #     wfout[:] = 0.0
+        #     
+        #     # print "weird implementation"
+        #     
+        #     if self.bc.lower() == 'periodic':    
+        #         raise NotImplementedError
+        #     n1 = mesh.np
+        #     sp =  2*self.order + 1 # number of stencil points
+        #     stname = '%d_%dp_c'%(degree, sp) # pick the appropriate weights   
+        #     for ii in range(int(sp/2), n1 - int(sp/2)):
+        #         for jj in range(sp):
+        #             wfout[ii] += wfin[ii - int(sp/2) + jj] * _fd_weight[stname][jj]
+        #     wfout /= mesh.spacing**(degree)        
 
-        elif degree == 2: 
-            wfout = wfin.copy()
-            wfout[:] = 0.0
+        elif degree == 1 or degree == 2: 
+            # print "hopefully better implementation"
+            
             
             n1 = mesh.np
             dh = mesh.spacing
             sp =  int(self.order + 1) # number of stencil points
+            sp1 = sp - 1
             st_deg = _stencils[degree]
             stencil = st_deg[self.order]
-            #inner region
-            for ii in range(sp - 1, n1 - sp):
-                wfout[ii] += wfin[ii] * stencil[0]
-                for jj in range(1, sp):
-                    wfout[ii] += (wfin[ii + jj] + wfin[ii - jj]) * stencil[jj]
+            if   degree == 1:
+                st2 =  np.concatenate(([-x for x in stencil[::-1]],stencil[1:]))
+            elif degree == 2:
+                st2 =  np.concatenate((stencil[::-1],stencil[1:]))
             
-            #boundaries
-            # if self.bc.lower() == 'zero':
-            #     for ii in range(sp - 1):
-            #         II = n1 - ii -1
-            #         wfout[ii] += wfin[ii] * stencil[0]
-            #         # wfout[II] += wfin[II] * stencil[0]
-            #         for jj in range(1, sp): 
-            #             wfout[ii] += wfin[ii + jj] * stencil[jj]
-            #             # wfout[II] += wfin[II - jj] * stencil[jj]
-            #         for jj in range(1, sp-ii): 
-            #             wfout[ii] += wfin[ii - jj] * stencil[jj]
-            #             # wfout[II] += wfin[II + jj] * stencil[jj]
+            #inner region
+            # print stencil
+            
+            wfout = MeshFunction(np.convolve(wfin, st2, mode='same'), mesh = wfin.mesh)
+            
+            # wfout = wfin.copy()
+            # wfout[:] = 0.0
+            #     
+            # for ii in range(sp1, n1 - sp1):
+            #     wfout[ii] += wfin[ii] * stencil[0]
+            #     for jj in range(1, sp):
+            #         wfout[ii] += (wfin[ii + jj] + wfin[ii - jj]) * stencil[jj]
+            
+            # boundaries
+            if self.bc.lower() == 'zero':
+                for ii in range(sp - 1):
+                    # II = n1 - ii -1
+                    wfout[ii] += wfin[ii] * stencil[0]
+                    # wfout[II] += wfin[II] * stencil[0]
+                    for jj in range(1, sp): 
+                        wfout[ii] += wfin[ii + jj] * stencil[jj]
+                        # wfout[II] += wfin[II - jj] * stencil[jj]
+                    for jj in range(1, sp-ii): 
+                        wfout[ii] += wfin[ii - jj] * stencil[jj]
+                        # wfout[II] += wfin[II + jj] * stencil[jj]
             #     
             # elif self.bc.lower() == 'periodic':    
             #     raise NotImplementedError
