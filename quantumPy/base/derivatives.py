@@ -175,7 +175,7 @@ class Derivative(object):
             #inner region
             # print stencil
             
-            wfout = MeshFunction(np.convolve(wfin, st2, mode='same'), mesh = wfin.mesh)
+            wfout = MeshFunction(np.convolve(wfin, st2[::-1], mode='same'), mesh = wfin.mesh)
             
             # wfout = wfin.copy()
             # wfout[:] = 0.0
