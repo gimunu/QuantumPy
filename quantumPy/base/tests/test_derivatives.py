@@ -51,7 +51,8 @@ def test_fd_derivatives():
     wf = gaussian_wp(box, sigma, k)
 
 
-    for params in [{'Strategy':'fs', 'Bc': 'periodic', 'de':1}, {'Strategy':'fd', 'Bc': 'zero', 'de':11}]:
+    for params in [{'Strategy':'fs', 'Bc': 'periodic', 'de':1 }, 
+                   {'Strategy':'fd', 'Bc': 'zero    ', 'de':11}]:
         D=qp.base.Derivative(box, **params)
         
         # D=qp.base.Derivative(box, Strategy = 'fs', Bc = 'periodic')
