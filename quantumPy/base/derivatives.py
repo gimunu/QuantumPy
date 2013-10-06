@@ -116,7 +116,7 @@ class Derivative(object):
         cf = mesh_to_cube(wfin, self.cube)
         Fcf = rs_to_fs(cf)
         K = Fcf.mesh.FSpoints        
-        cf = fs_to_rs((- 1j * K)**degree * Fcf)
+        cf = fs_to_rs((1j * K)**degree * Fcf)
         wfout = cube_to_mesh(cf, wfin.mesh)
         
         return wfout
