@@ -51,27 +51,28 @@ def test_fd_derivatives():
     wf = gaussian_wp(box, sigma, k)
 
 
-    # D=qp.base.Derivative(box, Strategy = 'fs', Bc = 'periodic')
-    D=qp.base.Derivative(box, Strategy = 'fd', Order = 4)
-    D.write_info()
-
+    for params in [{'Strategy':'fs', 'Bc': 'periodic', 'de':1}, {'Strategy':'fd', 'Bc': 'zero', 'de':11}]:
+        D=qp.base.Derivative(box, **params)
         
-    D1wf = D.perform(wf, degree =1)
-    D2wf = D.perform(wf, degree =2)
+        # D=qp.base.Derivative(box, Strategy = 'fs', Bc = 'periodic')
+        # D=qp.base.Derivative(box, Strategy = 'fd', Order = 4)
+        D.write_info()
+        
+        D1wf = D.perform(wf, degree =1)
+        D2wf = D.perform(wf, degree =2)
 
-    D1wfex = D1gaussian_wp(box, sigma, k)
-    D2wfex = D2gaussian_wp(box, sigma, k)
+        D1wfex = D1gaussian_wp(box, sigma, k)
+        D2wfex = D2gaussian_wp(box, sigma, k)
 
+        ED1ex= (wf.conjugate()*D1wfex).integrate()
+        ED1= (wf.conjugate()*D1wf).integrate()
 
-    ED1ex= (wf.conjugate()*D1wfex).integrate()
-    ED1= (wf.conjugate()*D1wf).integrate()
+        assert_almost_equal(ED1, ED1ex,  decimal=params['de'])
 
-    assert_almost_equal(ED1, ED1ex,  decimal=11)
+        ED2ex= (wf.conjugate()*D2wfex).integrate()
+        ED2= (wf.conjugate()*D2wf).integrate()
 
-    ED2ex= (wf.conjugate()*D2wfex).integrate()
-    ED2= (wf.conjugate()*D2wf).integrate()
-
-    assert_almost_equal(ED2, ED2ex,  decimal=11)
+        assert_almost_equal(ED2, ED2ex,  decimal=params['de'])
     
     
     
