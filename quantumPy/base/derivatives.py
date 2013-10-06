@@ -185,21 +185,21 @@ class Derivative(object):
             #     for jj in range(1, sp):
             #         wfout[ii] += (wfin[ii + jj] + wfin[ii - jj]) * stencil[jj]
             
-            # boundaries
-            if self.bc.lower() == 'zero':
-                for ii in range(sp - 1):
-                    # II = n1 - ii -1
-                    wfout[ii] += wfin[ii] * stencil[0]
-                    # wfout[II] += wfin[II] * stencil[0]
-                    for jj in range(1, sp): 
-                        wfout[ii] += wfin[ii + jj] * stencil[jj]
-                        # wfout[II] += wfin[II - jj] * stencil[jj]
-                    for jj in range(1, sp-ii): 
-                        wfout[ii] += wfin[ii - jj] * stencil[jj]
-                        # wfout[II] += wfin[II + jj] * stencil[jj]
-            #     
-            # elif self.bc.lower() == 'periodic':    
-            #     raise NotImplementedError
+            # # boundaries
+            # if self.bc.lower() == 'zero':
+            #     for ii in range(sp - 1):
+            #         # II = n1 - ii -1
+            #         wfout[ii] += wfin[ii] * stencil[0]
+            #         # wfout[II] += wfin[II] * stencil[0]
+            #         for jj in range(1, sp): 
+            #             wfout[ii] += wfin[ii + jj] * stencil[jj]
+            #             # wfout[II] += wfin[II - jj] * stencil[jj]
+            #         for jj in range(1, sp-ii): 
+            #             wfout[ii] += wfin[ii - jj] * stencil[jj]
+            #             # wfout[II] += wfin[II + jj] * stencil[jj]
+            # #     
+            # # elif self.bc.lower() == 'periodic':    
+            # #     raise NotImplementedError
             
                             
             wfout /= dh**(degree)        
