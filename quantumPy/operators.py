@@ -17,7 +17,7 @@
 
 from __future__ import division
 
-__all__ = ['Operator', 'Laplacian', 'Gradient', 'Kinetic', 'kinetic', 'identity', 'scalar',
+__all__ = ['Operator', 'Laplace', 'Gradient', 'Kinetic', 'kinetic', 'identity', 'scalar',
            'scalar_pot' , 'hamiltonian', 'exponential']
 
 import inspect
@@ -469,21 +469,32 @@ def scalar_pot(func, mesh = None):
     on the mesh for better performace.
     
     """
-
-    if mesh:
-        funcM = func(mesh.points)
-        def action(wf, **kwds):
-            return funcM * wf.copy()
-    else:    
-        def action(wf, **kwds):
-            r = wf.mesh.points
-            return func(r) * wf.copy()
+    tabulated = isinstance(func, MeshFunction)
+    function = callable(func)
+    
+    if   tabulated:
+            def action(wf, **kwds):
+                return func * wf.copy()        
+    elif function:
+        if mesh:
+            funcM = func(mesh.points)
+            def action(wf, **kwds):
+                return funcM * wf.copy()
+        else:    
+            def action(wf, **kwds):
+                r = wf.mesh.points
+                return func(r) * wf.copy()
+    else:
+        raise TypeError()            
 
     Op = Operator()
     Op.name    = 'Scalar potential'
-    Op.symbol  = func.__name__
     Op.formula = ''
-    Op.info    = '\n'+inspect.getsource(func)
+    if tabulated:
+        Op.symbol  = 'f'
+    else:    
+        Op.symbol  = func.__name__ 
+        Op.info    = '\n'+inspect.getsource(func)
         
     Op.set_action(action, 'LR')    
     return Op
@@ -582,7 +593,7 @@ def hamiltonian(mesh, vext = None, **kwds):
 def kinetic(mesh, **kwds):
     """Kinetic operator"""
            
-    T = -0.5 * Laplacian(mesh, **kwds)
+    T = -0.5 * Laplace(mesh, **kwds)
     
     # def action(wf, side = 'LR', **kwds):
     #      print "well well"
@@ -618,12 +629,12 @@ class Gradient(Operator):
 
 
 #------------------------------------------------------
-class Laplacian(Operator):
-    """Laplacian operator"""
+class Laplace(Operator):
+    """Laplace operator"""
     def __init__(self, mesh, **kwds):
-        super(Laplacian, self).__init__(**kwds)
+        super(Laplace, self).__init__(**kwds)
         
-        self.name    = 'Laplacian'
+        self.name    = 'Laplace'
         self.symbol  = '\\nabla^2'
         self.formula = 'd^2/dx^2'
         if mesh.dim > 1:
@@ -637,12 +648,12 @@ class Laplacian(Operator):
         return self.der.perform(wfin, degree = 2)
                 
     def _write_details(self, indent = 0):        
-        super(Laplacian,self)._write_details(indent)
+        super(Laplace,self)._write_details(indent)
         self.der.write_info(indent = indent+1)
 
 
 #------------------------------------------------------
-class Kinetic(Laplacian):
+class Kinetic(Laplace):
     """Kinetic operator"""
     def __init__(self, mesh, **kwds):
         super(Kinetic,self).__init__(mesh, **kwds)
