@@ -400,6 +400,10 @@ class Operator(object):
         
     def __rmul__(self, other):
         return    self._algebraic_operation(other, '*', reverse = True)
+    
+    def __div__(self, other):
+        if self._is_scalar_element(other):
+            return    self._algebraic_operation(1.0/other, '*', reverse = True)
         
     def __neg__(self):
         return -1*self 
