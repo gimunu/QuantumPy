@@ -457,18 +457,29 @@ def scalar(val):
 
 
 #------------------------------------------------------
-def scalar_pot(func):
-    """Scalar potential operator."""
+def scalar_pot(func, mesh = None):
+    """Scalar-potential operator.
+    
+    Returns the scalar-potential operator associated with `func'. 
+    The optional `mesh' parameter triggers the evaluation of the potential 
+    on the mesh for better performace.
+    
+    """
 
-    def action(wf, **kwds):
-        r = wf.mesh.points
-        return func(r) * wf.copy()
+    if mesh:
+        funcM = func(mesh.points)
+        def action(wf, **kwds):
+            return funcM * wf.copy()
+    else:    
+        def action(wf, **kwds):
+            r = wf.mesh.points
+            return func(r) * wf.copy()
 
     Op = Operator()
     Op.name    = 'Scalar potential'
     Op.symbol  = func.__name__
     Op.formula = ''
-    Op.info = '\n'+inspect.getsource(func)
+    Op.info    = '\n'+inspect.getsource(func)
         
     Op.set_action(action, 'LR')    
     return Op
