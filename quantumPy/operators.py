@@ -563,7 +563,7 @@ def hamiltonian(mesh, vext = None, **kwds):
     
     Vext = None
     if vext:
-        Vext = scalar_pot(vext)
+        Vext = scalar_pot(vext, mesh)
         H += Vext
 
     H.name    = 'Hamiltonian'
