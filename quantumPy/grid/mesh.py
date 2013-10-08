@@ -153,7 +153,11 @@ class Box(Mesh):
             
             points = floodFill(0.0, sphere, self.spacing)
             
-            self.points = np.sort(points) if self.dim == 1 else points
+            # self.points = np.sort(points) if self.dim == 1 else points
+            b = points.copy()
+            b.sort()
+            d = np.diff(b)
+            self.points = b[d>self.spacing /2.0]
             # self.points = np.arange(- self.radius, self.radius + self.spacing, self.spacing)
             
             
@@ -196,9 +200,15 @@ def floodFill(p, func, step, pts = None, dim = 1):
     if not func(p) or p in pts:
         return pts
     else:
-        if dim == 1:        
-            pts = np.append(pts, p)    
+        if dim == 1:
+            # print p
+            # print "diff = %e"%(p-3.9)    
+            if p not in pts:
+                # print "%e %s"%(p, pts)         
+                pts = np.append(pts, p)
+            # print "move fwd"        
             pts = floodFill(p + step, func, step, pts = pts, dim = dim)
+            # print "move bwd"        
             pts = floodFill(p - step, func, step, pts = pts, dim = dim)
         else:
             raise NotImplemented
