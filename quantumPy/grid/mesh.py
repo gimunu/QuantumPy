@@ -138,8 +138,24 @@ class Box(Mesh):
 
         if   self.shape.lower() == "sphere":
             # 1D
-            self.points = np.arange(- self.radius, self.radius + self.spacing, self.spacing)
-            # self.points = np.linspace(- self.radius, self.radius, num = self.radius/self.spacing,  endpoint=True)
+            
+            def sphere(pos, R=self.radius, dim = 1):
+                if   dim == 1:
+                    x = pos
+                    return x**2 < R**2
+                elif dim == 2:
+                    x, y = pos     
+                    return x**2 + y**2 < R**2
+                elif dim == 3:                
+                    x, y, z = pos     
+                    return x**2 + y**2 + z**2 < R**2
+                return 
+            
+            points = floodFill(0.0, sphere, self.spacing)
+            
+            self.points = np.sort(points) if self.dim == 1 else points
+            # self.points = np.arange(- self.radius, self.radius + self.spacing, self.spacing)
+            
             
         elif self.shape.lower() == "rect":
             # 1D
@@ -168,6 +184,26 @@ class Box(Mesh):
             raise Exception("unknown option")
             
         super(Box, self).write_info(indent)
+
+def floodFill(p, func, step, pts = None, dim = 1):
+    """ Flood fill.
+        
+    Stack-based recursive implementation.
+    """
+    if pts == None:
+        pts = np.array([])
+    
+    if not func(p) or p in pts:
+        return pts
+    else:
+        if dim == 1:        
+            pts = np.append(pts, p)    
+            pts = floodFill(p + step, func, step, pts = pts, dim = dim)
+            pts = floodFill(p - step, func, step, pts = pts, dim = dim)
+        else:
+            raise NotImplemented
+
+    return pts
 
 
 #############################################
@@ -215,7 +251,6 @@ def cube_to_mesh(cf, mesh):
         raise Exception("Not implemented for dim>1")
 
     return out 
-
 
 
 class Cube(Mesh):
