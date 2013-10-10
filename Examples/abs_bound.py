@@ -129,6 +129,7 @@ def evolve_mask(ABWidth, k, type, verbose = True, anim = False, quick = False):
 
     box = qp.Box(shape = 'Sphere', radius = Radius, spacing = dR)
 
+    
     if verbose:
         box.write_info() # Write a detailed description of the box
 
@@ -189,6 +190,7 @@ def evolve_mask(ABWidth, k, type, verbose = True, anim = False, quick = False):
         V1 = DfM / fM**3.
         V2 = 0.5*(1. - fM**(-2.))
         Vcap = qp.scalar_pot(V0) + qp.scalar_pot(V1) * GO + qp.scalar_pot(V2) * LO
+        # Vcap =  V1 * GO + LO * V2  + V0
         H += Vcap
         
         impotM = fM
@@ -282,12 +284,26 @@ def evolve_mask(ABWidth, k, type, verbose = True, anim = False, quick = False):
     wftEx = gaussian_wpT(box, sigma, k, T)
     NEx = (wftEx.conjugate()*wftEx).integrate().real
     
-    return (N, NEx)
+    RA = Radius - ABWidth
+    # print RA
+    def segment(pos):
+        return qp.segment(pos, - RA, RA)
+    intRegion = qp.submesh(segment, box)
+    # print intRegion.pindex
+    # print box.points[intRegion.pindex]
+    
+    NAEx = (wftEx.conjugate()*wftEx).integrate(intRegion).real
+    NA = (wft.conjugate()*wft).integrate(intRegion).real
+    
+    wfdiff = wft - wftEx
+    diff = (wfdiff.conjugate()*wfdiff).integrate(intRegion).real
+    diff = wfdiff.norm2(intRegion)
+    return (N, NEx, NA, NAEx, diff)
 
 #############    
 # MAIN 
 ############
 
-N, Nex = evolve_mask(10., k =  20. , type = 'cap_ses', quick = False, verbose = True, anim = False)
+N, Nex, NA, NAex, diff = evolve_mask(10., k =  20. , type = 'cap_ses', quick = False, verbose = True, anim = False)
 
-print N, Nex
+print N, Nex, NA, NAex, diff.real
