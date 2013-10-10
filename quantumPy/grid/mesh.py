@@ -139,26 +139,28 @@ class Box(Mesh):
         if   self.shape.lower() == "sphere":
             # 1D
             
-            # def sphere(pos, R=self.radius, dim = 1):
-            #     if   dim == 1:
-            #         x = pos
-            #         return x**2 < R**2
-            #     elif dim == 2:
-            #         x, y = pos     
-            #         return x**2 + y**2 < R**2
-            #     elif dim == 3:                
-            #         x, y, z = pos     
-            #         return x**2 + y**2 + z**2 < R**2
-            #     return 
-            # 
-            # points = floodFill(0.0, sphere, self.spacing)
-            # 
-            # # self.points = np.sort(points) if self.dim == 1 else points
+            def sphere(pos, R=self.radius, dim = 1):
+                if   dim == 1:
+                    x = pos
+                    return x**2 < R**2
+                elif dim == 2:
+                    x, y = pos     
+                    return x**2 + y**2 < R**2
+                elif dim == 3:                
+                    x, y, z = pos     
+                    return x**2 + y**2 + z**2 < R**2
+                return 
+            
+            points = floodFill(0.0, sphere, self.spacing)
+            # print "out"
+            # print points
+            self.points = np.sort(points) if self.dim == 1 else points
             # b = points.copy()
             # b.sort()
             # d = np.diff(b)
             # self.points = b[d>self.spacing /2.0]
-            self.points = np.arange(- self.radius, self.radius + self.spacing, self.spacing)
+
+            # self.points = np.arange(- self.radius, self.radius + self.spacing, self.spacing)
             
             
         elif self.shape.lower() == "rect":
@@ -198,18 +200,19 @@ def floodFill(p, func, step, pts = None, dim = 1):
         pts = np.array([])
     
     if not func(p) or p in pts:
+        # print "func(p = %e) = %e"%(p, func(p))
+        # print "p in pts %s"%(p in pts)
         return pts
     else:
         if dim == 1:
             # print p
-            # print "diff = %e"%(p-3.9)    
             if p not in pts:
-                # print "%e %s"%(p, pts)         
                 pts = np.append(pts, p)
+                # print "%e %s"%(p, pts)         
             # print "move fwd"        
-            pts = floodFill(p + step, func, step, pts = pts, dim = dim)
+            pts = floodFill((round(p/step) + 1) * step, func, step, pts = pts, dim = dim)
             # print "move bwd"        
-            pts = floodFill(p - step, func, step, pts = pts, dim = dim)
+            pts = floodFill((round(p/step) - 1) * step, func, step, pts = pts, dim = dim)
         else:
             raise NotImplemented
 
