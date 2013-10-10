@@ -361,6 +361,8 @@ class Operator(object):
         
         if self._is_scalar_element(other):
             other = scalar(other)
+        elif isinstance(other, MeshFunction):
+            other = scalar_pot(other)    
         elif not isinstance(other, Operator):
             raise TypeError("Cannot perform '%s' and type %s" %(operation, type(other)))
             
