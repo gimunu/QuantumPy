@@ -17,9 +17,11 @@
 
 from __future__ import division
 
-__all__=['Mesh', 'MeshFunction','Box', 'Cube', 'mesh_to_cube', 'cube_to_mesh']
+__all__=['Mesh', 'MeshFunction','Box', 'Cube', 'mesh_to_cube', 'cube_to_mesh', 'submesh', 'SubMesh', 
+         'sphere', 'segment']
 
 import numpy as np
+import functools
 from ..base.messages import *
 from ..base import types
 
@@ -28,18 +30,34 @@ from ..base import types
 #
 #############################################
 class Mesh(object):
-    """General Mesh class.
+    """Mesh class.
     
-    ...
+    The spatial grid defining the real space sampling points.
     
-    
+    Attributes
+    ----------
+    dim: integer
+        The space dimensionality.
+    points: array of tuples
+        The set of point coordinates defining the mesh.
+    np: integer
+        The global number of points.    
+    properties: str    
+        String defining the low level geometrical properties of the mesh.
+        The options are: Uniform, Cartesian.
+    info: dictionary
+        Dictionary containing additional information specific of an instance
+        such as the geometry.
+        
     """
+    
     def __init__(self, **kwds):
         super(Mesh, self).__init__()
         
         self.dim        = kwds.get('Dim', 1)
         self.points     = kwds.get('Points', np.array([]))
         self.properties = kwds.get('Properties', 'Uniform + Cartesian')
+        self.info       = {}
         if (self.__class__.__name__ == 'Mesh'):  #Avoid name-clash in subclasses 
             self.update()  
         
@@ -57,6 +75,57 @@ class Mesh(object):
         printmsg("       dimensions = %d "%(self.dim))        
         printmsg("           points = %d "%(self.np))        
 
+
+class SubMesh(Mesh):
+    """SubMesh class.
+    
+    Defines a subset of a parent mesh.
+    
+    Attributes
+    ----------
+    mesh: Mesh obj
+        Reference to the parent mesh object.
+    pindex: integer array    
+        Index set containing the indices of mesh points defining the submesh. 
+        
+    """
+    def __init__(self, mesh):
+        super(SubMesh, self).__init__()
+        self.mesh = mesh
+        self.pindex = np.array([], dtype=int)
+
+
+
+def submesh(func, mesh):
+    smesh = SubMesh(mesh)
+    for ii in range(mesh.np):
+        if func(mesh.points[ii]):
+            smesh.pindex = np.append(smesh.pindex, int(ii))
+    return smesh
+
+#############################################
+# Geometrical shapes
+#############################################
+
+def sphere(pos, Radius=1.0, dim = 1):
+    if   dim == 1:
+        x = pos
+        return x**2 <= Radius**2
+    elif dim == 2:
+        x, y = pos     
+        return x**2 + y**2 <= Radius**2
+    elif dim == 3:                
+        x, y, z = pos     
+        return x**2 + y**2 + z**2 <= Radius**2
+    return 
+
+def disk(pos, Radius=1.0):
+    return sphere(pos, Radius = Radius, dim = 2)
+    
+def segment(pos, P1, P2, dim = 1):
+    if dim == 1:
+        x = pos
+        return x >= P1 and x <= P2     
 
 #############################################
 #
@@ -102,10 +171,20 @@ class MeshFunction(np.ndarray):
             an optional sub-mesh domain can be entered with the Region option. 
         """
         if ('Uniform' in self.mesh.properties and 'Cartesian' in self.mesh.properties):
-            out = self.sum(dtype=types.CMPLX) * self.mesh.spacing            
+            if Region:
+                out = self[Region.pindex].sum() 
+            else:    
+                out = self.sum()
+            
+            out *= self.mesh.spacing               
         
-        return out.astype(types.CMPLX)
+        return out.astype(self.dtype)
 
+    def norm2(self, Region=None):
+        return (self.conjugate()*self).integrate(Region = Region)            
+
+    def norm(self, Region=None):
+        return np.sqrt(self.norm2(Region = Region))
 
 #############################################
 #
@@ -139,19 +218,10 @@ class Box(Mesh):
         if   self.shape.lower() == "sphere":
             # 1D
             
-            def sphere(pos, R=self.radius, dim = 1):
-                if   dim == 1:
-                    x = pos
-                    return x**2 < R**2
-                elif dim == 2:
-                    x, y = pos     
-                    return x**2 + y**2 < R**2
-                elif dim == 3:                
-                    x, y, z = pos     
-                    return x**2 + y**2 + z**2 < R**2
-                return 
             
-            points = floodFill(0.0, sphere, self.spacing)
+            sp = functools.partial(sphere, Radius = self.radius, dim = self.dim)
+            
+            points = floodFill(0.0, sp, self.spacing)
             # print "out"
             # print points
             self.points = np.sort(points) if self.dim == 1 else points
