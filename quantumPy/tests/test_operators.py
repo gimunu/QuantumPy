@@ -55,7 +55,7 @@ def test_kinetic():
     
     Tfs = qp.Kinetic(box, Strategy = 'fs', Bc = 'periodic')
     # print "<wf|Tfs|wf>  = %s"%Tfs.expectationValue(wf)   
-    assert_almost_equal(Tfs.expectationValue(wf), 10.203, decimal= 3) 
+    assert_almost_equal(Tfs.expectationValue(wf), 10.20, decimal= 2) 
 
     Tfd = qp.Kinetic(box, Strategy = 'fd', Order = 5, Bc = 'zero')
     # print "<wf|Tfd|wf>  = %s"%Tfd.expectationValue(wf)
