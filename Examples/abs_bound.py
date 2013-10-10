@@ -98,9 +98,23 @@ def Impotf (widht, height, type = 'sin2'):
     elif type == 'poly':
         pass
 
-
-# def ses_f(g_func, theta):
+# Smooth exterior complex scaling
+def ses_f(g_func, theta):
+    def f(x, x0, theta = theta):
+        y = x.copy()
+        y[:] = 0.0
+        y = 1.0 + (np.exp(1j*theta) - 1) * g_func(x, x0)
+        return y 
+    return f
     
+def ses_g(type = 'tanh', **kwds):
+    lam = kwds.get('lam', 1)    
+    def g(x, x0, lam = lam):
+        y = x.copy()
+        y[:] = 0.0
+        y = 1. + 0.5 * (np.tanh(lam*(x - x0)) - np.tanh(lam*(x + x0)))
+        return y
+    return g
 
 def evolve_mask(ABWidth, k, type, verbose = True, anim = False, quick = False):
 
@@ -161,11 +175,35 @@ def evolve_mask(ABWidth, k, type, verbose = True, anim = False, quick = False):
         
 
     if type == 'cap_ses':
-        pass
+        theta  = 0.1
+        lam = 1.0
+        x0 = Radius - ABWidth
+        g = ses_g(type = 'tanh', lam = lam)
+        f = ses_f(g, theta = 0.2)
+        fM = qp.MeshFunction(f(box.points, x0), box)
+        GO = qp.Gradient(box)
+        LO = qp.Laplace(box)
+        DfM  = GO.apply(fM)
+        DDfM = LO.apply(fM)
+        V0 = DDfM/fM**3. - (5./8.) * DfM**2./fM**4.
+        V1 = DfM / fM**3.
+        V2 = 0.5*(1. - fM**(-2.))
+        Vcap = qp.scalar_pot(V0) + qp.scalar_pot(V1) * GO + qp.scalar_pot(V2) * LO
+        H += Vcap
+        
+        impotM = fM
+        # pl.plot(box.points, fM, lw = 2) 
+        # pl.plot(box.points, V0, lw = 2, label = 'V0') 
+        # pl.plot(box.points, V1, lw = 2, label = 'V1') 
+        # pl.plot(box.points, V2, lw = 2, label = 'V2')
+        # pl.legend() 
+        # pl.show()   
+        # exit()
+        
         
     U = qp.td.propagator(H, method = 'etrs', exp_order = 4)
 
-    if type == 'cap_mask':
+    if type == 'cap_mask' or type == 'cap_ses' :
         # force the wavefuncion at the edges to be well beaved
         # by setting to zero the stencil points at the boundaries
         Ubox = qp.scalar_pot(mask(12*dR, type = 'unit_box'), box)
@@ -250,6 +288,6 @@ def evolve_mask(ABWidth, k, type, verbose = True, anim = False, quick = False):
 # MAIN 
 ############
 
-N, Nex = evolve_mask(10., k =  1. , type = 'mask_cap', quick = False, verbose = True, anim = True)
+N, Nex = evolve_mask(10., k =  20. , type = 'cap_ses', quick = False, verbose = True, anim = False)
 
 print N, Nex
