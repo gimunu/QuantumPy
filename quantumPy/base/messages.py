@@ -34,8 +34,8 @@ _DBG_TRAIL = "*"
 #                     format="%(message)s")
 logging.basicConfig(level= logging.INFO, format="%(message)s")
 
-def debug_msg(string, indent = _INDENT, line_char = _DBG_TRAIL):
-    if DEBUG_LEVEL > 0:
+def debug_msg(string, indent = _INDENT, line_char = _DBG_TRAIL, lev = 0):
+    if DEBUG_LEVEL > lev:
          print_msg(string, indent = indent, line_char = line_char)
     
 
