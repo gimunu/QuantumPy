@@ -137,19 +137,27 @@ def evolve_mask(ABWidth, k, type, verbose = True, anim = False, quick = False):
     # Radius =  5 
     T =  2.0 * Radius/abs(k)
 
-    box = qp.Box(shape = 'Sphere', radius = Radius, spacing = dR)
-
+    box = qp.Box(shape = 'Sphere', radius = Radius, spacing = dR, dim = 1)
     
     if verbose:
         box.write_info() # Write a detailed description of the box
 
+    # print box.points
+    # RA = Radius - ABWidth
+    # # print RA
+    # def segment(pos):
+    #     return qp.segment(pos, - RA, RA)
+    # intRegion = qp.submesh(segment, box)
+    # 
+    # exit()
 
     maskf  = None
     impotM = None
     maskM = None
 
-    # H = qp.hamiltonian(box, Strategy = 'fs', Bc = 'periodic')
+
     H = qp.hamiltonian(box) 
+
     if type == 'cap_sin2':
         eta = 0.2
         impotf = Impotf(ABWidth, height = -1j * eta)
@@ -175,10 +183,6 @@ def evolve_mask(ABWidth, k, type, verbose = True, anim = False, quick = False):
         LO = qp.Laplace(box)
         GMm = GO.apply(Mm)
         LMm = LO.apply(Mm)
-        # print Mm
-        # print GMm
-        # print LMm
-        # print box.points
         impotM =  1j/dt * Mm  - 1./4.*LMm - 1./12. * GMm**2  
         # pl.plot(box.points, impotM.real, lw = 2, label='Re[Impot]')    
         # pl.plot(box.points, impotM.imag, lw = 2, label='Im[Impot]')
@@ -330,6 +334,6 @@ def evolve_mask(ABWidth, k, type, verbose = True, anim = False, quick = False):
 # MAIN 
 ############
 
-N, Nex, NA, NAex, diff = evolve_mask(10., k =  10.5 , type = 'mask_cap_poly', quick = False, verbose = True, anim = True)
+N, Nex, NA, NAex, diff = evolve_mask(10., k =  5.5 , type = 'cap_poly', quick = False, verbose = True, anim = True)
 
 print N, Nex, NA, NAex, diff
