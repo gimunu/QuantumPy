@@ -126,7 +126,7 @@ def ses_g(type = 'tanh', **kwds):
         return y
     return g
 
-def evolve_mask(ABWidth, k, type, verbose = True, anim = False, quick = False):
+def evolve_mask(ABWidth, k, type, verbose = True, anim = False, quick = False, **kwds):
 
     dR = 0.1
     dt = 0.01
@@ -137,19 +137,13 @@ def evolve_mask(ABWidth, k, type, verbose = True, anim = False, quick = False):
     # Radius =  5 
     T =  2.0 * Radius/abs(k)
 
+    # qp.base.messages.DEBUG_LEVEL = 666
+
     box = qp.Box(shape = 'Sphere', radius = Radius, spacing = dR, dim = 1)
     
     if verbose:
         box.write_info() # Write a detailed description of the box
 
-    # print box.points
-    # RA = Radius - ABWidth
-    # # print RA
-    # def segment(pos):
-    #     return qp.segment(pos, - RA, RA)
-    # intRegion = qp.submesh(segment, box)
-    # 
-    # exit()
 
     maskf  = None
     impotM = None
@@ -159,7 +153,7 @@ def evolve_mask(ABWidth, k, type, verbose = True, anim = False, quick = False):
     H = qp.hamiltonian(box) 
 
     if type == 'cap_sin2':
-        eta = 0.2
+        eta = kwds.get('eta', 0.2)
         impotf = Impotf(ABWidth, height = -1j * eta)
         impotM = qp.MeshFunction(impotf(box.points), box)
         Vcap = qp.scalar_pot(impotM, box)
@@ -334,6 +328,7 @@ def evolve_mask(ABWidth, k, type, verbose = True, anim = False, quick = False):
 # MAIN 
 ############
 
-N, Nex, NA, NAex, diff = evolve_mask(10., k =  5.5 , type = 'cap_poly', quick = False, verbose = True, anim = True)
+N, Nex, NA, NAex, diff = evolve_mask(10., k =  5.5 , type = 'cap_sin2', 
+                                     quick = False, verbose = True, anim = True, eta =100)
 
 print N, Nex, NA, NAex, diff
