@@ -54,9 +54,9 @@ class Mesh(object):
     def __init__(self, **kwds):
         super(Mesh, self).__init__()
         
-        self.dim        = kwds.get('Dim', 1)
-        self.points     = kwds.get('Points', np.array([]))
-        self.properties = kwds.get('Properties', 'Uniform + Cartesian')
+        self.dim        = kwds.get('dim', 1)
+        self.points     = kwds.get('points', np.array([]))
+        self.properties = kwds.get('properties', 'Uniform + Cartesian')
         self.info       = {}
         if (self.__class__.__name__ == 'Mesh'):  #Avoid name-clash in subclasses 
             self.update()  
@@ -109,7 +109,9 @@ def submesh(func, mesh):
 
 def sphere(pos, Radius=1.0, dim = 1):
     if   dim == 1:
-        x = pos
+        # print "+++ %s"%pos
+        x, = pos
+        # print "--- %e"%x
         return x**2 <= Radius**2
     elif dim == 2:
         x, y = pos     
@@ -216,15 +218,14 @@ class Box(Mesh):
         """Update derived data when some property changes"""
 
         if   self.shape.lower() == "sphere":
-            # 1D
-            
             
             sp = functools.partial(sphere, Radius = self.radius, dim = self.dim)
             
-            points = floodFill(0.0, sp, self.spacing)
-            # print "out"
-            # print points
+            p = [0.0]*self.dim
+            points = floodFill(p , sp, self.spacing, coordinate('cartesian'), dim = self.dim)
+
             self.points = np.sort(points) if self.dim == 1 else points
+
             # b = points.copy()
             # b.sort()
             # d = np.diff(b)
@@ -261,10 +262,11 @@ class Box(Mesh):
             
         super(Box, self).write_info(indent)
 
-def floodFill(p, func, step, pts = None, dim = 1):
+
+def floodFill(p, func, step, coord, pts = None, dim = 1):
     """ Flood fill.
         
-    Stack-based recursive implementation.
+    Recursive stack-based implementation.
     """
     if pts == None:
         pts = np.array([])
@@ -274,20 +276,75 @@ def floodFill(p, func, step, pts = None, dim = 1):
         # print "p in pts %s"%(p in pts)
         return pts
     else:
-        if dim == 1:
-            # print p
-            if p not in pts:
-                pts = np.append(pts, p)
-                # print "%e %s"%(p, pts)         
-            # print "move fwd"        
-            pts = floodFill((round(p/step) + 1) * step, func, step, pts = pts, dim = dim)
-            # print "move bwd"        
-            pts = floodFill((round(p/step) - 1) * step, func, step, pts = pts, dim = dim)
-        else:
-            raise NotImplemented
+        # print p
+        if p not in pts:
+            pts = np.append(pts, p)
+            # print "%s %s"%(p, pts)         
+        # if dim == 1:
+        #         
+        #     # print "move fwd"        
+        #     pts = floodFill((round(p/step) + 1) * step, func, step, coord, pts = pts, dim = dim)
+        #     # print "move bwd"        
+        #     pts = floodFill((round(p/step) - 1) * step, func, step, coord, pts = pts, dim = dim)
+        # elif dim<=3:
+        for dir in range(1, dim+1):
+            # move forward along dir
+            pts = floodFill(coord.next(p, step,  dir, dim), func, step, coord, pts = pts, dim = dim)
+            # move backward along dir
+            pts = floodFill(coord.next(p, step, -dir, dim), func, step, coord, pts = pts, dim = dim)
+        # else:    
+        #     raise NotImplemented
 
     return pts
 
+
+
+class CoordinateGenerator(object):
+    """Infinitesimal CoordinateGenerator class."""
+    def __init__(self, name):
+        super(CoordinateGenerator, self).__init__()
+        self.name  = name
+        self.nextf = None
+        
+    def next(self, pt, step, dir, dim, **kwds):
+        """Generates next point.
+        
+        Starting from `pt', generates the next point along the direction `dir' at `step' distance.
+        The sign of `dir' indicates wether to move forward `+' or backward `-'.        
+        """
+        if not callable(self.nextf):
+            raise Exception("Coordinate next method not defined.")
+            
+        return self.nextf(pt, step, dir, dim, **kwds)
+        
+
+def coordinate(type):
+    
+    coord = None
+    
+    if type == 'cartesian':
+        
+        def next(pt, step, dir, dim):
+            sgn = np.sign(dir)
+            if   dim == 1:
+                pt, = pt
+                nxtpt = (round(pt/step) + sgn) * step, 
+            elif dim == 2: 
+                if abs(dir) == 1:    
+                    nxtpt = ((round(pt[0]/step) + sgn) * step , pt[1])
+                else:    
+                    nxtpt = (pt[0], (round(pt[1]/step) + sgn) * step) 
+            
+            # print "uqindi?? %s "%nxtpt
+            return nxtpt#[0:dim]
+            
+        coord = CoordinateGenerator(type)
+        coord.nextf = next
+        
+    else:
+        raise NotImplemented("Unrecognized coordinate type `%s'."%type)    
+    
+    return coord
 
 #############################################
 #
