@@ -42,11 +42,12 @@ def debug_msg(string, indent = _INDENT, line_char = _DBG_TRAIL):
 def print_msg(string, indent = _INDENT, line_char = _MSG_TRAIL):
     """simple messages printing helpers"""
     if string:
-        for lev in range(indent):
-            for i in range(_INDENT_TAB):
-                string = " "+string   
-        string = line_char + " " + string
-        print string
+        for st in filter(None, string.split('\n')):
+            for lev in range(indent):
+                for i in range(_INDENT_TAB):
+                    st = " " + st   
+            st = line_char + " " + st
+            print st
         # logging.info(string)
 
     
