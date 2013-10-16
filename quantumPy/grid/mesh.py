@@ -75,6 +75,16 @@ class Mesh(object):
         printmsg("       dimensions = %d "%(self.dim))        
         printmsg("           points = %d "%(self.np))        
 
+    def __contains__(self, item):
+        for p in self.points:
+                if p is item:
+                    return True
+        return False
+
+    def __iter__(self):
+        for p in self.points:
+                yield p
+
 
 class SubMesh(Mesh):
     """SubMesh class.
@@ -128,6 +138,42 @@ def segment(pos, P1, P2, dim = 1):
     if dim == 1:
         x = pos
         return x >= P1 and x <= P2     
+
+def cube(pos, L, dim = 1, center = (0,0,0)):
+    if   dim == 1:
+        LL = (L)
+    elif dim == 2:
+        LL = (L,L)
+    elif dim == 3:             
+        LL = (L,L,L)
+    return cuboid(pos, LL, dim = dim, center = center)
+
+    
+def cuboid(pos, L, dim = 1, center = (0,0,0)):
+     if   dim == 1:
+          x,  = pos
+          Lx, = L 
+          cx, = center
+          return x - cx <= Lx/2. and x - cx >= -Lx/2.
+     elif dim == 2:
+          x, y = pos
+          Lx, Ly = L 
+          cx, cy = center
+          boundx = x - cx <= Lx/2. and x - cx >= -Lx/2.
+          boundy = y - cy <= Ly/2. and y - cy >= -Ly/2.
+          return boundx and boundy
+    
+     elif dim == 3:     
+          x, y, z = pos
+          Lx, Ly, Lz = L 
+          cx, cy, cz = center
+          boundx = x - cx <= Lx/2. and x - cx >= -Lx/2.
+          boundy = y - cy <= Ly/2. and y - cy >= -Ly/2.
+          boundz = z - cz <= Lz/2. and z - cz >= -Lz/2.
+          return boundx and boundy and boundz
+    
+     else:
+         return False     
 
 #############################################
 #
@@ -273,17 +319,19 @@ def floodFill(p, func, step, coord, pts = None, dim = 1):
     
     if not func(p) or p in pts:
         # print "func(p = %e) = %e"%(p, func(p))
-        # print "p in pts %s"%(p in pts)
+        debug_msg("FloodFill- p (%s) is already in pts (%s) - return"%(p,  pts), lev =10)
         return pts
     else:
-        debug_msg("FloodFill- %s"%p, lev = 10)
+        debug_msg("FloodFill- p (%s)"%p, lev = 10)
         if p not in pts:
             pts = np.append(pts, p)
-            debug_msg("FloodFill- %s %s"%(p, pts), lev = 10)         
+            debug_msg("FloodFill- p (%s) added to pts %s"%(p, pts), lev = 10)         
 
         for idir in range(1, dim+1):
             # move forward along dir
+            print "move fwd"
             pts = floodFill(coord.next(p, step,  idir, dim), func, step, coord, pts = pts, dim = dim)
+            print "move bwd"
             # move backward along dir
             pts = floodFill(coord.next(p, step, -idir, dim), func, step, coord, pts = pts, dim = dim)
 
