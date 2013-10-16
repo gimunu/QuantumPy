@@ -17,7 +17,7 @@
 
 from __future__ import division
 
-__all__=['Mesh', 'MeshFunction','Box', 'Cube', 'mesh_to_cube', 'cube_to_mesh', 'submesh', 'SubMesh', 
+__all__=['Mesh', 'MeshFunction','Box','box', 'Cube', 'mesh_to_cube', 'cube_to_mesh', 'submesh', 'SubMesh', 
          'sphere', 'segment']
 
 import numpy as np
@@ -55,9 +55,15 @@ class Mesh(object):
         super(Mesh, self).__init__()
         
         self.dim        = kwds.get('dim', 1)
+        self.spacing    = kwds.get('spacing', 0.1) 
+        
+        # index to coordinate map
+        self._i2c        = np.array([])
+        # coordinate to index map
+        self._c2i        = np.array([])
         self.points     = kwds.get('points', np.array([]))
         self.properties = kwds.get('properties', 'Uniform + Cartesian')
-        self.info       = {}
+        self.info       = None
         if (self.__class__.__name__ == 'Mesh'):  #Avoid name-clash in subclasses 
             self.update()  
         
@@ -73,7 +79,13 @@ class Mesh(object):
         printmsg("Mesh info: " )
         printmsg("       properties = %s "%(self.properties))        
         printmsg("       dimensions = %d "%(self.dim))        
-        printmsg("           points = %d "%(self.np))        
+        printmsg("           points = %d "%(self.np))
+        if self.info:
+            print_msg(self.info, indent = indent+1)
+        
+
+    def __str__(self):
+        return "<mesh: np = %d>"%(self.np)
 
     def __contains__(self, item):
         for p in self.points:
@@ -175,68 +187,39 @@ def cuboid(pos, L, dim = 1, center = (0,0,0)):
      else:
          return False     
 
+
 #############################################
-#
-#############################################
-class MeshFunction(np.ndarray):
-    """Subclass of numpy.ndarray specifying a function defined on the mesh.
+def box(shape, coord = 'cartesian',  **kwds):
+    """Create a simulation box."""
     
-    ...
-    
-    Parameters
-    ----------
-    mesh : Mesh 
-       A instance of Mesh.
+    box = Mesh(**kwds)
 
-    Examples
-    --------
-    Each instance of the class appends a mesh attribute to an ndarray and must be initialized this way:
-    >>> a = np.zeros(mesh.np)
-    >>> mf = MeshFunction(a, mesh = mesh)
-    A instance of the class can also be crated with copy():
-    >>> mf_cpy = mf.copy()       
-    """
-    
-    def __new__(cls, input_array, mesh=None):
-        # Input array is an already formed ndarray instance
-        # We first cast to be our class type
-        obj = np.asarray(input_array).view(cls)
-        # add the new attribute to the created instance
-        obj.mesh = mesh
-        # Finally, we must return the newly created object:
-        return obj
-
-    def __array_finalize__(self,obj):
-        # reset the attribute from passed original object
-        self.mesh = getattr(obj, 'mesh', None)
-        # We do not need to return anything
-
-    def integrate(self, Region = None):
-        """ Performs the integration of the function on the underlying mesh.
+    box.info =            "Geometry: \n"
+    box.info = box.info + "      Shape = %s\n"%shape    
+    if   shape.lower() == 'sphere': 
+        fshapewargs = functools.partial(sphere,  Radius = kwds.get('radius'), dim = box.dim)
+        box.info = box.info + "     Radius = %1.2e\n"%kwds.get('radius')    
+    elif shape.lower() == 'cube':
+        fshapewargs = functools.partial(cube,    L = kwds.get('Lsize'), dim = box.dim)
+        box.info = box.info + "      Lsize = %1.2e\n"%kwds.get('Lsize')    
+    elif shape.lower() == 'cuboid':
+        fshapewargs = functools.partial(cuboid,  L = kwds.get('Lsize'), dim = box.dim)
+    else: 
+        raise Exception
+    box.info = box.info + "    spacing = %1.2e\n"%box.spacing    
         
         
-            The integration is by default on the full mesh where the function is defined,
-            an optional sub-mesh domain can be entered with the Region option. 
-        """
-        if ('Uniform' in self.mesh.properties and 'Cartesian' in self.mesh.properties):
-            if Region:
-                out = self[Region.pindex].sum() 
-            else:    
-                out = self.sum()
-            
-            out *= self.mesh.spacing               
-        
-        return out.astype(self.dtype)
+    p = [0.0]*box.dim
+    points = floodFill(p, fshapewargs, box.spacing, coordinate(coord), dim = box.dim)
 
-    def norm2(self, Region=None):
-        return (self.conjugate()*self).integrate(Region = Region)            
+    box.points = np.sort(points) if box.dim == 1 else points
+    box.i2c    = np.sort(points) if box.dim == 1 else points
+    
+    
+    box.update()
+    
+    return box
 
-    def norm(self, Region=None):
-        return np.sqrt(self.norm2(Region = Region))
-
-#############################################
-#
-#############################################
 
 class Box(Mesh):
     """The simulation box geometries.
@@ -246,7 +229,6 @@ class Box(Mesh):
         super(Box,self).__init__(**kwds)
 
         self.shape   = shape
-        self.spacing = kwds.get('spacing', 0.1) 
 
         if   self.shape.lower() == "sphere":
             self.radius = kwds.get('radius', 0.0)
@@ -515,3 +497,63 @@ class Cube(Mesh):
         name = self.aliases.get(name, name)
         #return getattr(self, name) #Causes infinite recursion on non-existent attribute
         return object.__getattribute__(self, name)
+
+#############################################
+#
+#############################################
+class MeshFunction(np.ndarray):
+    """Subclass of numpy.ndarray specifying a function defined on the mesh.
+    
+    ...
+    
+    Parameters
+    ----------
+    mesh : Mesh 
+       A instance of Mesh.
+
+    Examples
+    --------
+    Each instance of the class appends a mesh attribute to an ndarray and must be initialized this way:
+    >>> a = np.zeros(mesh.np)
+    >>> mf = MeshFunction(a, mesh = mesh)
+    A instance of the class can also be crated with copy():
+    >>> mf_cpy = mf.copy()       
+    """
+    
+    def __new__(cls, input_array, mesh=None):
+        # Input array is an already formed ndarray instance
+        # We first cast to be our class type
+        obj = np.asarray(input_array).view(cls)
+        # add the new attribute to the created instance
+        obj.mesh = mesh
+        # Finally, we must return the newly created object:
+        return obj
+
+    def __array_finalize__(self,obj):
+        # reset the attribute from passed original object
+        self.mesh = getattr(obj, 'mesh', None)
+        # We do not need to return anything
+
+    def integrate(self, Region = None):
+        """ Performs the integration of the function on the underlying mesh.
+        
+        
+            The integration is by default on the full mesh where the function is defined,
+            an optional sub-mesh domain can be entered with the Region option. 
+        """
+        if ('Uniform' in self.mesh.properties and 'Cartesian' in self.mesh.properties):
+            if Region:
+                out = self[Region.pindex].sum() 
+            else:    
+                out = self.sum()
+            
+            out *= self.mesh.spacing               
+        
+        return out.astype(self.dtype)
+
+    def norm2(self, Region=None):
+        return (self.conjugate()*self).integrate(Region = Region)            
+
+    def norm(self, Region=None):
+        return np.sqrt(self.norm2(Region = Region))
+
