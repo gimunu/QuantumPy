@@ -15,7 +15,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 # 02110-1301, USA.
 
-__all__=['print_msg', 'debug_msg']
+__all__=['print_msg', 'debug_msg', 'DEBUG_VERBOSE']
 
 import logging
 import inspect
@@ -23,7 +23,10 @@ import inspect
 
 #Public constants
 DEBUG_LEVEL = 0
-DEBUG_STACKTRACE = 10
+DEBUG_STACKTRACE = 100
+DEBUG_VERBOSE    = 50
+DEBUG_INSANE     = 300
+
 
 #Private constants
 _QUIET  = False
@@ -37,16 +40,18 @@ _DBG_TRAIL = "*"
 #                     format="%(message)s")
 logging.basicConfig(level= logging.INFO, format="%(message)s")
 
-def debug_msg(string, indent = _INDENT, line_char = _DBG_TRAIL, lev = DEBUG_STACKTRACE):
-    if DEBUG_LEVEL > lev - 1:
-         trace = ''
-         stackdepth = min([DEBUG_LEVEL - lev + 1, len(inspect.stack()[:][3]) ] )
-         for i in range(1, stackdepth):
-             trace = inspect.stack()[i][3] + '.' + trace if i > 1 else inspect.stack()[i][3]
-         if trace != '':     
-             string = trace + ' -- ' + string
-         print_msg(string, indent = indent, line_char = line_char)
-    
+def debug_msg(string, indent = _INDENT, line_char = _DBG_TRAIL, lev = 0):
+
+    if DEBUG_LEVEL > lev:
+        if DEBUG_LEVEL >= DEBUG_STACKTRACE:
+             trace = ''
+             stackdepth = min([DEBUG_LEVEL - DEBUG_STACKTRACE + 1, len(inspect.stack()[:][3]) ] )
+             for i in range(1, stackdepth):
+                 trace = inspect.stack()[i][3] + '.' + trace if i > 1 else inspect.stack()[i][3]
+             if trace != '':     
+                 string = trace + ' -- ' + string
+     
+        print_msg(string, indent = indent, line_char = line_char)
 
 def print_msg(string, indent = _INDENT, line_char = _MSG_TRAIL):
     """simple messages printing helpers"""
