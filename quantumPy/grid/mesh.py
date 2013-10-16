@@ -319,20 +319,20 @@ def floodFill(p, func, step, coord, pts = None, dim = 1):
     
     if not func(p) or p in pts:
         # print "func(p = %e) = %e"%(p, func(p))
-        debug_msg("p (%s) is already in pts (%s) - return"%(p,  pts), lev =10)
+        # debug_msg("p (%s) is already in pts (%s) - return"%(p,  pts), lev = DEBUG_VERBOSE)
         return pts
     else:
-        debug_msg("p (%s)"%p, lev = 10)
+        # debug_msg("p (%s)"%p, lev = 10)
         if p not in pts:
             pts = np.append(pts, p)
-            debug_msg("p (%s) added to pts %s"%(p, pts), lev = 10)         
+            # debug_msg("p (%s) added to pts %s"%(p, pts), lev = DEBUG_VERBOSE)         
 
         for idir in range(1, dim+1):
             # move forward along dir
-            debug_msg("move fwd", lev = 10)
+            # debug_msg("move fwd", lev = DEBUG_VERBOSE)
             pts = floodFill(coord.next(p, step,  idir, dim), func, step, coord, pts = pts, dim = dim)
             # move backward along dir
-            debug_msg("move bwd", lev = 10)
+            # debug_msg("move bwd", lev = DEBUG_VERBOSE)
             pts = floodFill(coord.next(p, step, -idir, dim), func, step, coord, pts = pts, dim = dim)
 
     return pts
@@ -375,7 +375,7 @@ def coordinate(type):
                 else:    
                     nxtpt = (pt[0], (round(pt[1]/step) + sgn) * step) 
             
-            debug_msg("%s nxtpt %s "%(type, nxtpt))
+            # debug_msg("%s nxtpt %s "%(type, nxtpt), lev = DEBUG_VERBOSE)
             return nxtpt#[0:dim]
             
         coord = CoordinateGenerator(type)
