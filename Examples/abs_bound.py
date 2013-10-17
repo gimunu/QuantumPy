@@ -20,7 +20,6 @@
 from __future__ import division
 
 import numpy as np
-import pylab as pl
 import scipy as sp
 import pylab as pl
 
@@ -137,15 +136,18 @@ def evolve_mask(ABWidth, k, type, verbose = True, anim = False, quick = False, *
     # Radius =  5 
     T =  2.0 * Radius/abs(k)
 
-    qp.base.messages.DEBUG_LEVEL = qp.base.messages.DEBUG_STACKTRACE + 2
+    # qp.base.messages.DEBUG_LEVEL = qp.base.messages.DEBUG_STACKTRACE + 2
+    # qp.base.messages.DEBUG_LEVEL = 2
 
-    box = qp.Box(shape = 'Sphere', radius = Radius, spacing = dR, dim = 2)
+    # box = qp.Box(shape = 'Sphere', radius = Radius, spacing = dR, dim = 2)
+    box = qp.box(shape = 'Sphere', radius = Radius, spacing = dR, dim = 1)
         
+    print box
     
     if verbose:
         box.write_info() # Write a detailed description of the box
 
-    exit()
+    # exit()
 
 
     maskf  = None
@@ -264,15 +266,21 @@ def evolve_mask(ABWidth, k, type, verbose = True, anim = False, quick = False, *
     if anim and not quick:
         pl.ion()
         if maskM != None:
-            pl.plot(wft.mesh.points, maskM.real, lw = 2, label='Mask')
-            pl.plot(wft.mesh.points, maskM.imag, lw = 2, label='Im[Mask]')
+            # pl.plot(wft.mesh.points, maskM.real, lw = 2, label='Mask')
+            # pl.plot(wft.mesh.points, maskM.imag, lw = 2, label='Im[Mask]')
+            qp.plot(maskM.real, lw = 2, label='Mask')
+            qp.plot(maskM.imag, lw = 2, label='Im[Mask]')
         if impotM != None:            
-            pl.plot(wft.mesh.points, abs(impotM.real), lw = 2, label='Re[Impot]')    
-            pl.plot(wft.mesh.points, abs(impotM.imag), lw = 2, label='Im[Impot]')
-        line, =pl.plot(wft.mesh.points, (wft.conjugate()*wft).real, color = 'G', marker='o', label='|wf0|^2')
+            # pl.plot(wft.mesh.points, abs(impotM.real), lw = 2, label='Re[Impot]')    
+            # pl.plot(wft.mesh.points, abs(impotM.imag), lw = 2, label='Im[Impot]')
+            qp.plot(abs(impotM.real), lw = 2, label='Re[Impot]')    
+            qp.plot(abs(impotM.imag), lw = 2, label='Im[Impot]')
+        # line, =pl.plot(wft.mesh.points, (wft.conjugate()*wft).real, color = 'G', marker='o', label='|wf0|^2')
+        line, = qp.plot((wft.conjugate()*wft).real, color = 'G', marker='o', label='|wf0|^2')
         line.axes.set_xlim(-Radius,Radius) 
         line.axes.set_ylim(-0.01,1.0) 
-        lineEx, =pl.plot(wftEx.mesh.points, (wftEx.conjugate()*wftEx).real, color = 'R', label='|wfexact|^2')
+        # lineEx, =pl.plot(wftEx.mesh.points, (wftEx.conjugate()*wftEx).real, color = 'R', label='|wfexact|^2')
+        lineEx, =qp.plot((wftEx.conjugate()*wftEx).real, color = 'R', label='|wfexact|^2')
         pl.legend()
         pl.draw()
 
@@ -331,7 +339,7 @@ def evolve_mask(ABWidth, k, type, verbose = True, anim = False, quick = False, *
 # MAIN 
 ############
 
-N, Nex, NA, NAex, diff = evolve_mask(10., k =  20.0 , type = 'cap_sin2', 
-                                     quick = False, verbose = True, anim = True, eta = 0.02)
+N, Nex, NA, NAex, diff = evolve_mask(10., k =  5.0 , type = 'cap_sin2', 
+                                     quick = False, verbose = True, anim = True, eta = 0.2)
 
 print N, Nex, NA, NAex, diff
