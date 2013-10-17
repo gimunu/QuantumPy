@@ -212,7 +212,7 @@ def box(shape, coord = 'cartesian',  **kwds):
     p = [0.0]*box.dim
     points = floodFill(p, fshapewargs, box.spacing, coordinate(coord), dim = box.dim)
 
-    box.points = np.sort(points) if box.dim == 1 else points
+    box.points = np.sort(points.ravel()) if box.dim == 1 else points
     box.i2c    = np.sort(points) if box.dim == 1 else points
     
     
@@ -293,29 +293,65 @@ class Box(Mesh):
 
 def floodFill(p, func, step, coord, pts = None, dim = 1):
     """ Flood fill.
-        
+
     Recursive stack-based implementation.
     """
+    first = False
     if pts == None:
-        pts = np.array([])
+        pts = np.array([p])
+        first = True
+        
     
-    if not func(p) or p in pts:
+    pinpts = any((pts[:]== p).all(1))
+    
+    if (not func(p) or pinpts) and not first:
         # print "func(p = %e) = %e"%(p, func(p))
-        # debug_msg("p (%s) is already in pts (%s) - return"%(p,  pts), lev = DEBUG_VERBOSE)
+        # debug_msg("p %s is already in pts %s or hitting edge - return"%(p,  pts), lev = DEBUG_VERBOSE)
         return pts
     else:
-        # debug_msg("p (%s)"%p, lev = 10)
-        if p not in pts:
-            pts = np.append(pts, p)
-            # debug_msg("p (%s) added to pts %s"%(p, pts), lev = DEBUG_VERBOSE)         
+        # debug_msg("p %s"%p, lev = 10)
+        pinpts = any((pts[:]== p).all(1))
+        if  not pinpts:
+            pts = np.append(pts, [p], axis = 0)
+            # debug_msg("p %s added to pts %s"%(p, pts), lev = DEBUG_VERBOSE)         
 
         for idir in range(1, dim+1):
             # move forward along dir
-            # debug_msg("move fwd", lev = DEBUG_VERBOSE)
+            # debug_msg("move fwd dir = %d"%idir, lev = DEBUG_VERBOSE)
             pts = floodFill(coord.next(p, step,  idir, dim), func, step, coord, pts = pts, dim = dim)
             # move backward along dir
-            # debug_msg("move bwd", lev = DEBUG_VERBOSE)
+            # debug_msg("move bwd dir = %d"%idir, lev = DEBUG_VERBOSE)
             pts = floodFill(coord.next(p, step, -idir, dim), func, step, coord, pts = pts, dim = dim)
+
+    return pts
+
+def floodFill_(p, func, step, coord, pts = None, dim = 1):
+    """ Iterative flood fill.
+    """
+    toFill = set()
+    toFill.add(p)
+    
+    if pts == None:
+        pts = np.array([p])
+        first = True
+        
+    while not toFill.empty():
+        p = toFill.pop()
+        pinpts = any((pts[:]== p).all(1))
+        if (not func(p) or pinpts) and not first:
+            debug_msg("p %s is already in pts %s or hitting edge - return"%(p,  pts), lev = DEBUG_VERBOSE)
+
+            if p not in pts:
+                pts = np.append(pts, [p], axis = 0)
+                debug_msg("p %s added to pts %s"%(p, pts), lev = DEBUG_VERBOSE)         
+
+            for idir in range(1, dim+1):
+                # move forward along dir
+                debug_msg("move fwd dir = %d"%idir, lev = DEBUG_VERBOSE)
+                pts = floodFill(coord.next(p, step,  idir, dim), func, step, coord, pts = pts, dim = dim)
+                # move backward along dir
+                debug_msg("move bwd dir = %d"%idir, lev = DEBUG_VERBOSE)
+                pts = floodFill(coord.next(p, step, -idir, dim), func, step, coord, pts = pts, dim = dim)
 
     return pts
 
@@ -353,9 +389,9 @@ def coordinate(type):
                 nxtpt = (round(pt/step) + sgn) * step, 
             elif dim == 2: 
                 if abs(dir) == 1:    
-                    nxtpt = ((round(pt[0]/step) + sgn) * step , pt[1])
+                    nxtpt = [(round(pt[0]/step) + sgn) * step , pt[1]]
                 else:    
-                    nxtpt = (pt[0], (round(pt[1]/step) + sgn) * step) 
+                    nxtpt = [pt[0], (round(pt[1]/step) + sgn) * step] 
             
             # debug_msg("%s nxtpt %s "%(type, nxtpt), lev = DEBUG_VERBOSE)
             return nxtpt#[0:dim]
