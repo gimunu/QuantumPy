@@ -25,7 +25,7 @@ __all__ = ['World']
 
 
 class World(object):
-    """docstring for World"""
+    """Class representing a physics engine."""
     def __init__(self, arg):
         super(World, self).__init__()
         self.arg = arg
