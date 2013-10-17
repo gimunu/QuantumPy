@@ -141,13 +141,9 @@ def evolve_mask(ABWidth, k, type, verbose = True, anim = False, quick = False, *
 
     # box = qp.Box(shape = 'Sphere', radius = Radius, spacing = dR, dim = 2)
     box = qp.box(shape = 'Sphere', radius = Radius, spacing = dR, dim = 1)
-        
-    print box
-    
+            
     if verbose:
         box.write_info() # Write a detailed description of the box
-
-    # exit()
 
 
     maskf  = None
