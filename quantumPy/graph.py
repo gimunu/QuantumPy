@@ -21,6 +21,8 @@ from __future__ import division
 
 __all__ = ['plot']
 
+import numpy as np
+
 try:
     import pylab as pl
 except ImportError:
@@ -32,15 +34,19 @@ def plot(qpEntity, **kwds):
     """Wrappers to plot various quantumPy entities."""
 
     out = None
-    if isinstance(qpEntity, MeshFunction):
+    if   isinstance(qpEntity, MeshFunction):
         out = plot_meshFunction(qpEntity, **kwds)
+        
+    elif isinstance(qpEntity, Mesh):
+        out = plot_mesh(qpEntity, **kwds)
+
     else:
-        raise Exception
+        raise Warning("%s is not a quantumPy `plottable' entity"% qpEntity.__class__.__name__)
         
     return out 
 
 def plot_meshFunction(mf, **kwds):
-    """docstring for plot_meshFunction"""
+    """Plot meshFunction."""
     
     dim = mf.mesh.dim
     out = None
@@ -55,4 +61,34 @@ def plot_meshFunction(mf, **kwds):
         raise Exception    
     
     return out
+
+def plot_mesh(mesh, **kwds):
+    """Plot Mesh points."""
+    dim = mesh.dim
+    out = None
+    
+    if not pl:
+        return out
+
+
+    if dim <= 2:
+        data = np.zeros((mesh.i2c.shape[0], 2))
+        data[:,0:dim]= mesh.i2c[:,0:dim]
+        
+        out = pl.scatter(data[:,0], data[:,1], **kwds) 
+        # labels = ['point{0}'.format(i) for i in range(mesh.np)]
+        # for label, x, y in zip(labels, data[:,0], data[:,1]):
+        #     plt.annotate(
+        #         label, 
+        #         xy = (x, y), xytext = (-20, 20),
+        #         textcoords = 'offset points', ha = 'right', va = 'bottom',
+        #         bbox = dict(boxstyle = 'round,pad=0.5', fc = 'yellow', alpha = 0.5),
+        #         arrowprops = dict(arrowstyle = '->', connectionstyle = 'arc3,rad=0'))
+    # if dim == 2:        
+    #     out = pl.scatter(mesh.i2c[:,0], mesh.i2c[:,1], **kwds) 
+    else:
+        raise Exception    
+    
+    return out
+    
     
