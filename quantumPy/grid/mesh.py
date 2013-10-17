@@ -58,9 +58,9 @@ class Mesh(object):
         self.spacing    = kwds.get('spacing', 0.1) 
         
         # index to coordinate map
-        self._i2c        = np.array([])
+        self.i2c        = np.array([])
         # coordinate to index map
-        self._c2i        = np.array([])
+        self.c2i        = np.array([])
         self.points     = kwds.get('points', np.array([]))
         self.properties = kwds.get('properties', 'Uniform + Cartesian')
         self.info       = None
