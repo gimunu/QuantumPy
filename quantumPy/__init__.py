@@ -17,7 +17,7 @@
 
 import numpy as np
 
-__all__ = ['base','grid','operators','td']
+__all__ = ['base', 'grid', 'operators', 'td', 'graph']
 
 for module in __all__:
     exec 'from . import {0}'.format(module)
@@ -25,7 +25,8 @@ for module in __all__:
 # Make selected functionality available directly in the root namespace.
 available = [('operators', operators.__all__),
              ('grid.mesh', grid.mesh.__all__), 
-             ('td', ['Propagator'])]
+             ('td', ['Propagator']),
+             ('graph', ['plot'])]
 for module, names in available:
     exec 'from .{0} import {1}'.format(module, ', '.join(names))
     __all__.extend(names)

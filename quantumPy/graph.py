@@ -50,7 +50,7 @@ def plot_meshFunction(mf, **kwds):
         return out
         
     if dim == 1:
-        
+        out = pl.plot(mf.mesh.points, mf, **kwds)
     else:
         raise Exception    
     
