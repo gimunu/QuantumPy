@@ -139,7 +139,7 @@ def evolve_mask(ABWidth, k, type, verbose = True, anim = False, quick = False, *
     # qp.base.messages.DEBUG_LEVEL = qp.base.messages.DEBUG_STACKTRACE + 2
     # qp.base.messages.DEBUG_LEVEL = 2
 
-    # box = qp.Box(shape = 'Sphere', radius = Radius, spacing = dR, dim = 2)
+    # box = qp.box(shape = 'Sphere', radius = Radius, spacing = dR, dim = 2)
     box = qp.box(shape = 'Sphere', radius = Radius, spacing = dR, dim = 1)
             
     if verbose:

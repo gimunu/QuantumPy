@@ -33,7 +33,7 @@ import quantumPy as qp
 # Create the simulation box
 #
 Radius = 4.0
-box = qp.Box(shape = 'Sphere', radius = Radius, spacing = 0.1)
+box = qp.box(shape = 'Sphere', radius = Radius, spacing = 0.1)
 box.write_info() # Write a detailed description of the box
 
 

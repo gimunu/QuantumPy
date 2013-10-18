@@ -45,7 +45,7 @@ def imaginary_time_scf(U, H, wfin, dt = 0.01 , Nmax = 1e4, Eth = 1e-6):
 
 def test_propagators():
     Radius = 4.0
-    box = qp.Box(shape = 'Sphere', radius = Radius, spacing = 0.1)
+    box = qp.box(shape = 'Sphere', radius = Radius, spacing = 0.1)
     
     def vext(x):
         omega = 1.0

@@ -21,6 +21,7 @@ from __future__ import division
 
 __all__ = ['plot']
 
+import warnings
 import numpy as np
 
 try:
@@ -41,7 +42,7 @@ def plot(qpEntity, **kwds):
         out = plot_mesh(qpEntity, **kwds)
 
     else:
-        raise Warning("%s is not a quantumPy `plottable' entity"% qpEntity.__class__.__name__)
+        warnings.warn("%s is not a quantumPy `plottable' entity"% qpEntity.__class__.__name__)
         
     return out 
 
@@ -76,14 +77,16 @@ def plot_mesh(mesh, **kwds):
         data[:,0:dim]= mesh.i2c[:,0:dim]
         
         out = pl.scatter(data[:,0], data[:,1], **kwds) 
-        # labels = ['point{0}'.format(i) for i in range(mesh.np)]
-        # for label, x, y in zip(labels, data[:,0], data[:,1]):
-        #     plt.annotate(
-        #         label, 
-        #         xy = (x, y), xytext = (-20, 20),
-        #         textcoords = 'offset points', ha = 'right', va = 'bottom',
-        #         bbox = dict(boxstyle = 'round,pad=0.5', fc = 'yellow', alpha = 0.5),
-        #         arrowprops = dict(arrowstyle = '->', connectionstyle = 'arc3,rad=0'))
+        
+        if kwds.get('labels', False):
+            labels = ['point{0}'.format(i) for i in range(mesh.np)]
+            for label, x, y in zip(labels, data[:,0], data[:,1]):
+                pl.annotate(
+                    label, 
+                    xy = (x, y), xytext = (-20, 20),
+                    textcoords = 'offset points', ha = 'right', va = 'bottom',
+                    bbox = dict(boxstyle = 'round,pad=0.5', fc = 'yellow', alpha = 0.5),
+                    arrowprops = dict(arrowstyle = '->', connectionstyle = 'arc3,rad=0'))
     # if dim == 2:        
     #     out = pl.scatter(mesh.i2c[:,0], mesh.i2c[:,1], **kwds) 
     else:

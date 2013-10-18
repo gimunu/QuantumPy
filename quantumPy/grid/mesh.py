@@ -61,7 +61,8 @@ class Mesh(object):
         self.i2c        = np.array([])
         # coordinate to index map
         self.c2i        = np.array([])
-        self.points     = kwds.get('points', np.array([]))
+        
+        self.points     = self.i2c
         self.properties = kwds.get('properties', 'Uniform + Cartesian')
         self.info       = None
         if (self.__class__.__name__ == 'Mesh'):  #Avoid name-clash in subclasses 
@@ -69,7 +70,8 @@ class Mesh(object):
         
     def update(self):
         """Refresh all the data-dependent values after a change"""
-        self.np = self.points.size 
+        # self.np = self.i2c.shape[0] #if self.dim > 1 else self.i2c.ravel().size 
+        self.np = self.points.size
     
     def write_info(self, indent = 0):
         from functools import partial
@@ -84,17 +86,20 @@ class Mesh(object):
             print_msg(self.info, indent = indent+1)
         
 
+    def get_coords_from_index(self, idx):
+        return self.i2c[idx,0:self.dim]
+
     def __str__(self):
         return "<mesh: np = %d>"%(self.np)
 
     def __contains__(self, item):
-        for p in self.points:
+        for p in self.i2c:
                 if p is item:
                     return True
         return False
 
     def __iter__(self):
-        for p in self.points:
+        for p in self.i2c:
                 yield p
 
 
@@ -252,7 +257,8 @@ class Box(Mesh):
             p = [0.0]*self.dim
             points = floodFill(p , sp, self.spacing, coordinate('cartesian'), dim = self.dim)
 
-            self.points = np.sort(points) if self.dim == 1 else points
+            self.i2c = np.sort(points) if self.dim == 1 else points
+            
 
             # b = points.copy()
             # b.sort()
@@ -264,11 +270,13 @@ class Box(Mesh):
             
         elif self.shape.lower() == "rect":
             # 1D
-            self.points = np.arange(- self.side/2.0, self.side/2.0 + self.spacing, self.spacing) 
+            self.i2c = np.arange(- self.side/2.0, self.side/2.0 + self.spacing, self.spacing) 
             # self.points = np.linspace(- self.side/2.0, self.side/2.0 , num = self.side/self.spacing,  endpoint=True) 
                        
         else:
             raise Exception("unknown option")        
+                
+        self.points = self.i2c
                 
         super(Box, self).update()
 

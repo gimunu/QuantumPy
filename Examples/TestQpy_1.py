@@ -33,7 +33,7 @@ import quantumPy as qp
 # We are working in one-dimension by default
 #
 Radius = 5.0
-box = qp.Box(shape = 'Sphere', radius = Radius, spacing = 0.1)
+box = qp.box(shape = 'Sphere', radius = Radius, spacing = 0.1)
 box.write_info() # Write a detailed description of the box
 
 #

@@ -44,7 +44,7 @@ def D2gaussian_wp(mesh, sigma, k):
 
 def test_fd_derivatives():
     Radius = 4.0
-    box = qp.Box(shape = 'Sphere', radius = Radius, spacing = 0.01)
+    box = qp.box(shape = 'Sphere', radius = Radius, spacing = 0.01)
     
     k = 4.0
     sigma = np.sqrt(2.0)/abs(k)

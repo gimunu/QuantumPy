@@ -24,7 +24,7 @@ import quantumPy as qp
 
 def test_expression():
     Radius = 4.0
-    box = qp.Box(shape = 'Sphere', radius = Radius, spacing = 0.1)
+    box = qp.box(shape = 'Sphere', radius = Radius, spacing = 0.1)
     
     wf = qp.grid.MeshFunction( np.random.rand(box.np)+0.j, mesh = box)
     wf /= np.sqrt((wf*wf.conjugate()).integrate().real)
@@ -45,7 +45,7 @@ def test_expression():
 
 
 def test_kinetic():
-    box = qp.Box(shape = 'Sphere', radius = 5.0, spacing = 0.1)
+    box = qp.box(shape = 'Sphere', radius = 5.0, spacing = 0.1)
     
     X = box.points
     k = 4.0
