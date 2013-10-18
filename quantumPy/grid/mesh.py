@@ -227,7 +227,7 @@ def box(shape, coord = 'cartesian',  **kwds):
 
 
 
-def floodFill(p, func, step, coord, pts = None, dim = 1):
+def floodFill_stack(p, func, step, coord, pts = None, dim = 1):
     """ Flood fill.
 
     Recursive stack-based implementation.
@@ -261,33 +261,29 @@ def floodFill(p, func, step, coord, pts = None, dim = 1):
 
     return pts
 
-def floodFill_(p, func, step, coord, pts = None, dim = 1):
+def floodFill(p, inshape, step, coord,  dim = 1):
     """ Iterative flood fill.
     """
-    toFill = set()
-    toFill.add(p)
-    
-    if pts == None:
-        pts = np.array([p])
-        first = True
-        
-    while not toFill.empty():
+    toFill = list()
+    toFill.append(p)
+    pts = None
+
+    while len(toFill) > 0:
         p = toFill.pop()
-        pinpts = any((pts[:]== p).all(1))
-        if (not func(p) or pinpts) and not first:
-            debug_msg("p %s is already in pts %s or hitting edge - return"%(p,  pts), lev = DEBUG_VERBOSE)
+        
+        if not inshape(p):
+            continue
+            
+        pinpts = any((pts[:]== p).all(1)) if pts != None else False
 
-            if p not in pts:
-                pts = np.append(pts, [p], axis = 0)
-                debug_msg("p %s added to pts %s"%(p, pts), lev = DEBUG_VERBOSE)         
-
+        if not pinpts:
+            pts = np.append(pts, [p], axis = 0) if pts != None  else np.array([p])
+                        
             for idir in range(1, dim+1):
                 # move forward along dir
-                debug_msg("move fwd dir = %d"%idir, lev = DEBUG_VERBOSE)
-                pts = floodFill(coord.next(p, step,  idir, dim), func, step, coord, pts = pts, dim = dim)
+                toFill.append(coord.next(p, step,  idir, dim))
                 # move backward along dir
-                debug_msg("move bwd dir = %d"%idir, lev = DEBUG_VERBOSE)
-                pts = floodFill(coord.next(p, step, -idir, dim), func, step, coord, pts = pts, dim = dim)
+                toFill.append(coord.next(p, step, -idir, dim))
 
     return pts
 
