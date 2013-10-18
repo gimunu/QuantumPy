@@ -17,7 +17,7 @@
 
 from __future__ import division
 
-__all__=['Mesh', 'MeshFunction','Box','box', 'Cube', 'mesh_to_cube', 'cube_to_mesh', 'submesh', 'SubMesh', 
+__all__=['Mesh', 'MeshFunction','box', 'Cube', 'mesh_to_cube', 'cube_to_mesh', 'submesh', 'SubMesh', 
          'sphere', 'segment']
 
 import numpy as np
@@ -61,8 +61,8 @@ class Mesh(object):
         self.i2c        = np.array([])
         # coordinate to index map
         self.c2i        = np.array([])
-        
         self.points     = self.i2c
+        
         self.properties = kwds.get('properties', 'Uniform + Cartesian')
         self.info       = None
         if (self.__class__.__name__ == 'Mesh'):  #Avoid name-clash in subclasses 
@@ -71,7 +71,7 @@ class Mesh(object):
     def update(self):
         """Refresh all the data-dependent values after a change"""
         # self.np = self.i2c.shape[0] #if self.dim > 1 else self.i2c.ravel().size 
-        self.np = self.points.size
+        self.np = self.points.size if self.dim == 1 else  self.i2c.shape[0]
     
     def write_info(self, indent = 0):
         from functools import partial
@@ -225,78 +225,6 @@ def box(shape, coord = 'cartesian',  **kwds):
     
     return box
 
-
-class Box(Mesh):
-    """The simulation box geometries.
-       For the moment it's trivial we are working only in 1D.
-    """
-    def __init__(self, shape = 'Sphere', **kwds):
-        super(Box,self).__init__(**kwds)
-
-        self.shape   = shape
-
-        if   self.shape.lower() == "sphere":
-            self.radius = kwds.get('radius', 0.0)
-                        
-        elif self.shape.lower() == "rect":
-            self.side = kwds.get('side', 0.0)
-            
-        else:
-            raise "unknown option"
-        
-        if (self.__class__.__name__ == 'Box'):  #Avoid subclass name clash
-            self.update()          
-
-    def update(self):
-        """Update derived data when some property changes"""
-
-        if   self.shape.lower() == "sphere":
-            
-            sp = functools.partial(sphere, Radius = self.radius, dim = self.dim)
-            
-            p = [0.0]*self.dim
-            points = floodFill(p , sp, self.spacing, coordinate('cartesian'), dim = self.dim)
-
-            self.i2c = np.sort(points) if self.dim == 1 else points
-            
-
-            # b = points.copy()
-            # b.sort()
-            # d = np.diff(b)
-            # self.points = b[d>self.spacing /2.0]
-
-            # self.points = np.arange(- self.radius, self.radius + self.spacing, self.spacing)
-            
-            
-        elif self.shape.lower() == "rect":
-            # 1D
-            self.i2c = np.arange(- self.side/2.0, self.side/2.0 + self.spacing, self.spacing) 
-            # self.points = np.linspace(- self.side/2.0, self.side/2.0 , num = self.side/self.spacing,  endpoint=True) 
-                       
-        else:
-            raise Exception("unknown option")        
-                
-        self.points = self.i2c
-                
-        super(Box, self).update()
-
-        # Mesh.update(self) # refresh super        
-        
-    def write_info(self, indent = 0):
-        from functools import partial
-        printmsg = partial(print_msg, indent = indent)       
-         
-        printmsg( "Box info: " )       
-        printmsg( "            shape = %s "%(self.shape))
-        printmsg( "         spacing  = %1.2e [a.u.]"%(self.spacing))
-        if   self.shape.lower() == "sphere":
-            printmsg( "          radius  = %1.2e [a.u.]"%(self.radius))
-        elif self.shape.lower() == "rect":
-            printmsg( "            side  = %1.2e [a.u.]"%(self.side))
-        else:
-            raise Exception("unknown option")
-            
-        super(Box, self).write_info(indent)
 
 
 def floodFill(p, func, step, coord, pts = None, dim = 1):
