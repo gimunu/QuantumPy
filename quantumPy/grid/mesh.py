@@ -134,29 +134,25 @@ def submesh(func, mesh):
 # Geometrical shapes
 #############################################
 
-def sphere(pos, Radius=1.0, dim = 1):
-    if   dim == 1:
-        # print "+++ %s"%pos
-        x, = pos
-        # print "--- %e"%x
-        return x**2 <= Radius**2
-    elif dim == 2:
-        x, y = pos     
-        return x**2 + y**2 <= Radius**2
-    elif dim == 3:                
-        x, y, z = pos     
-        return x**2 + y**2 + z**2 <= Radius**2
-    return 
+def sphere(pos, Radius=1.0, dim = 1, center = [0,0,0]):
+    p = np.array(pos) 
+    c = np.array(center) 
+    r2 = np.sum(np.power(p[0:dim]-c[0:dim],2))
+
+    return r2 <= Radius**2        
+
 
 def disk(pos, Radius=1.0):
     return sphere(pos, Radius = Radius, dim = 2)
+
     
 def segment(pos, P1, P2, dim = 1):
     if dim == 1:
         x = pos
         return x >= P1 and x <= P2     
 
-def cube(pos, L, dim = 1, center = (0,0,0)):
+
+def cube(pos, L, dim = 1, center = [0,0,0]):
     if   dim == 1:
         LL = (L)
     elif dim == 2:
