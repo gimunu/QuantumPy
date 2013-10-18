@@ -296,21 +296,10 @@ def coordinate(type):
         
         def next(pt, step, dir, dim):
             sgn = np.sign(dir)                
-            # if   dim == 1:
-            #     pt, = pt
-            #     nxtpt = (round(pt/step) + sgn) * step, 
-            # elif dim == 2: 
-            #     if abs(dir) == 1:    
-            #         nxtpt = [(round(pt[0]/step) + sgn) * step , pt[1]]
-            #     else:    
-            #         nxtpt = [pt[0], (round(pt[1]/step) + sgn) * step] 
-            # elif dim == 3: 
             idir = abs(dir)-1 
             nxtpt = pt[:]
             nxtpt[idir] =  (round(pt[idir]/step) + sgn) * step
-            
-            # debug_msg("%s nxtpt %s "%(type, nxtpt), lev = DEBUG_VERBOSE)
-            return nxtpt#[0:dim]
+            return nxtpt
             
         coord = CoordinateGenerator(type)
         coord.nextf = next
