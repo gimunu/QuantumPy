@@ -78,15 +78,20 @@ def plot_mesh(mesh, **kwds):
         
         out = pl.scatter(data[:,0], data[:,1], **kwds) 
         
-        if kwds.get('labels', False):
-            labels = ['point{0}'.format(i) for i in range(mesh.np)]
+        if kwds.get('labels', True):
+            labels = ['{0}'.format(i) for i in range(mesh.np)]
             for label, x, y in zip(labels, data[:,0], data[:,1]):
                 pl.annotate(
                     label, 
-                    xy = (x, y), xytext = (-20, 20),
-                    textcoords = 'offset points', ha = 'right', va = 'bottom',
-                    bbox = dict(boxstyle = 'round,pad=0.5', fc = 'yellow', alpha = 0.5),
-                    arrowprops = dict(arrowstyle = '->', connectionstyle = 'arc3,rad=0'))
+                    xy = (x, y), xytext = (-2, 2),
+                    textcoords = 'offset points', ha = 'right', va = 'bottom')
+                # pl.annotate(
+                #     label, 
+                #     xy = (x, y), xytext = (-20, 20),
+                #     textcoords = 'offset points', ha = 'right', va = 'bottom',
+                #     bbox = dict(boxstyle = 'round,pad=0.5', fc = 'yellow', alpha = 0.5),
+                #     arrowprops = dict(arrowstyle = '->', connectionstyle = 'arc3,rad=0'))
+
     # if dim == 2:        
     #     out = pl.scatter(mesh.i2c[:,0], mesh.i2c[:,1], **kwds) 
     else:
