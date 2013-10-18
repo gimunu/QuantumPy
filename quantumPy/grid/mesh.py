@@ -153,40 +153,17 @@ def segment(pos, P1, P2, dim = 1):
 
 
 def cube(pos, L, dim = 1, center = [0,0,0]):
-    if   dim == 1:
-        LL = (L)
-    elif dim == 2:
-        LL = (L,L)
-    elif dim == 3:             
-        LL = (L,L,L)
-    return cuboid(pos, LL, dim = dim, center = center)
+    return cuboid(pos, [L]*dim, dim = dim, center = center)
 
     
-def cuboid(pos, L, dim = 1, center = (0,0,0)):
-     if   dim == 1:
-          x,  = pos
-          Lx, = L 
-          cx, = center
-          return x - cx <= Lx/2. and x - cx >= -Lx/2.
-     elif dim == 2:
-          x, y = pos
-          Lx, Ly = L 
-          cx, cy = center
-          boundx = x - cx <= Lx/2. and x - cx >= -Lx/2.
-          boundy = y - cy <= Ly/2. and y - cy >= -Ly/2.
-          return boundx and boundy
+def cuboid(pos, L, dim = 1, center = [0,0,0]):
+    isin = True 
+    for idim in range(dim):
+        isin = pos[idim] - center[idim] <=  L[idim]/2. and isin
+        isin = pos[idim] - center[idim] >= -L[idim]/2. and isin
+
+    return isin
     
-     elif dim == 3:     
-          x, y, z = pos
-          Lx, Ly, Lz = L 
-          cx, cy, cz = center
-          boundx = x - cx <= Lx/2. and x - cx >= -Lx/2.
-          boundy = y - cy <= Ly/2. and y - cy >= -Ly/2.
-          boundz = z - cz <= Lz/2. and z - cz >= -Lz/2.
-          return boundx and boundy and boundz
-    
-     else:
-         return False     
 
 
 #############################################
