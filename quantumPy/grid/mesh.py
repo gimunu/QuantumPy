@@ -200,17 +200,24 @@ def box(shape, coord = 'cartesian',  **kwds):
     box = Mesh(**kwds)
 
     box.info =            "Geometry: \n"
-    box.info = box.info + "      Shape = %s\n"%shape    
-    if   shape.lower() == 'sphere': 
-        fshapewargs = functools.partial(sphere,  Radius = kwds.get('radius'), dim = box.dim)
-        box.info = box.info + "     Radius = %1.2e\n"%kwds.get('radius')    
-    elif shape.lower() == 'cube':
-        fshapewargs = functools.partial(cube,    L = kwds.get('Lsize'), dim = box.dim)
-        box.info = box.info + "      Lsize = %1.2e\n"%kwds.get('Lsize')    
-    elif shape.lower() == 'cuboid':
-        fshapewargs = functools.partial(cuboid,  L = kwds.get('Lsize'), dim = box.dim)
-    else: 
-        raise Exception
+    
+    if callable(shape):
+        box.info = box.info + "      Shape = Custom\n" 
+        fshapewargs = shape
+        
+    else:       
+        box.info = box.info + "      Shape = %s\n"%shape 
+        if   shape.lower() == 'sphere': 
+            fshapewargs = functools.partial(sphere,  Radius = kwds.get('radius'), dim = box.dim)
+            box.info = box.info + "     Radius = %1.2e\n"%kwds.get('radius')    
+        elif shape.lower() == 'cube':
+            fshapewargs = functools.partial(cube,    L = kwds.get('Lsize'), dim = box.dim)
+            box.info = box.info + "      Lsize = %1.2e\n"%kwds.get('Lsize')    
+        elif shape.lower() == 'cuboid':
+            fshapewargs = functools.partial(cuboid,  L = kwds.get('Lsize'), dim = box.dim)
+        else: 
+            raise Exception
+    
     box.info = box.info + "    spacing = %1.2e\n"%box.spacing    
         
         
