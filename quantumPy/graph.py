@@ -75,16 +75,17 @@ def plot_mesh(mesh, **kwds):
     if dim <= 2:
         data = np.zeros((mesh.i2c.shape[0], 2))
         data[:,0:dim]= mesh.i2c[:,0:dim]
-        
-        out = pl.scatter(data[:,0], data[:,1], **kwds) 
-        
-        if kwds.get('labels', True):
+
+        if kwds.pop('labels', False):
             labels = ['{0}'.format(i) for i in range(mesh.np)]
             for label, x, y in zip(labels, data[:,0], data[:,1]):
                 pl.annotate(
                     label, 
                     xy = (x, y), xytext = (-2, 2),
                     textcoords = 'offset points', ha = 'right', va = 'bottom')
+        
+        out = pl.scatter(data[:,0], data[:,1], **kwds) 
+        
                 # pl.annotate(
                 #     label, 
                 #     xy = (x, y), xytext = (-20, 20),
@@ -92,8 +93,6 @@ def plot_mesh(mesh, **kwds):
                 #     bbox = dict(boxstyle = 'round,pad=0.5', fc = 'yellow', alpha = 0.5),
                 #     arrowprops = dict(arrowstyle = '->', connectionstyle = 'arc3,rad=0'))
 
-    # if dim == 2:        
-    #     out = pl.scatter(mesh.i2c[:,0], mesh.i2c[:,1], **kwds) 
     else:
         raise Exception    
     
