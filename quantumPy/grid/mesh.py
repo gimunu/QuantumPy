@@ -191,7 +191,7 @@ def box(shape, coord = 'cartesian',  **kwds):
         else: 
             raise Exception
     
-    box.info = box.info + "    spacing = %1.2e\n"%box.spacing    
+    box.info = box.info + "    spacing = %s\n"%box.spacing    
         
         
     p = [0.0]*box.dim
@@ -241,12 +241,14 @@ def floodFill_stack(p, func, step, coord, pts = None, dim = 1):
 
     return pts
 
-def floodFill(p, inshape, step, coord,  dim = 1):
+def floodFill(p0, inshape, step, coord,  dim = 1):
     """ Iterative flood fill.
     """
     toFill = list()
-    toFill.append(p)
+    toFill.append(p0)
     pts = None
+    
+    kwds = {'center': p0}
 
     while len(toFill) > 0:
         p = toFill.pop()
@@ -261,9 +263,9 @@ def floodFill(p, inshape, step, coord,  dim = 1):
                         
             for idir in range(1, dim+1):
                 # move forward along dir
-                toFill.append(coord.next(p, step,  idir, dim))
+                toFill.append(coord.next(p, step,  idir, dim, **kwds))
                 # move backward along dir
-                toFill.append(coord.next(p, step, -idir, dim))
+                toFill.append(coord.next(p, step, -idir, dim, **kwds))
 
     return pts
 
@@ -291,21 +293,48 @@ class CoordinateGenerator(object):
 def coordinate(type):
     
     coord = None
+    nextf = None
     
-    if type == 'cartesian':
-        
-        def next(pt, step, dir, dim):
+    def gstep(x, step, sgn):
+        return (round(x/step) + sgn) * step
+    
+    if   type == 'cartesian':
+        def nextf(pt, step, dir, dim, **kwds):
             sgn = np.sign(dir)                
             idir = abs(dir)-1 
             nxtpt = pt[:]
-            nxtpt[idir] =  (round(pt[idir]/step) + sgn) * step
+            # nxtpt[idir] =  (round(pt[idir]/step) + sgn) * step
+            nxtpt[idir] =  gstep(pt[idir], step, sgn)
             return nxtpt
             
-        coord = CoordinateGenerator(type)
-        coord.nextf = next
         
+    elif type == 'spherical':
+        def nextf(pt, step, dir, dim, **kwds):
+            c = kwds.pop('center', [0.]*dim)
+            pt = np.array(pt) 
+            c = np.array(c) 
+            r = np.sqrt(np.sum(np.power(pt[0:dim]-c[0:dim],2)))
+            sgn = np.sign(dir)                
+            idir = abs(dir)-1 
+            nxtpt = pt[:]
+            if idir == 0:
+                #radial steps
+                nxtpt[idir] =  r + gstep(pt[idir], step[idir], sgn)
+            elif idir == 1:
+                #angular steps     
+                nxtpt[idir]  = r * np.cos( gstep(pt[idir], step[idir], sgn) )
+            elif idir >= 2:
+                nxtpt[idir]  = r * np.cos( gstep(pt[idir], step[idir], sgn) )
+                nxtpt[idir] *= np.sin( gstep(pt[idir-1], step[idir-1], sgn) )
+
+            print nxtpt
+            return nxtpt
+            
     else:
         raise NotImplemented("Unrecognized coordinate type `%s'."%type)    
+
+    coord = CoordinateGenerator(type)
+    coord.nextf = nextf
     
     return coord
 
