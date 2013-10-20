@@ -91,24 +91,24 @@ class Derivative(object):
         super(Derivative, self).__init__()
         self.mesh = mesh
         
-        self.bc =    kwds.get('Bc', 'zero')           # Boundary conditions
-        self.strategy = kwds.get('Strategy', 'fs' if (self.bc.lower() == 'periodic') else 'fd')
-        self.order = kwds.get('Order', 4)          
-        self.cube = kwds.get('Cube', None)
+        self.bc =    kwds.pop('Bc', 'zero')           # Boundary conditions
+        self.strategy = kwds.pop('Strategy', 'fs' if (self.bc.lower() == 'periodic') else 'fd')
+        self.order = kwds.pop('Order', 4)          
+        self.cube = kwds.pop('Cube', None)
         
         if (self.strategy.lower() == 'fs' and self.cube is None):
             self.cube = Cube(self.mesh, Attributes = 'RS + FS') 
     
-    def perform(self, wfin, degree, dir = 1):
+    def perform(self, wfin, degree, axis = 1):
         if   (self.strategy.lower() == 'fd'):
-            return self._fd_perform(wfin, degree, dir = dir)
+            return self._fd_perform(wfin, degree, axis = axis)
         elif (self.strategy.lower() == 'fs'):
-            return self._fs_perform(wfin, degree, dir = dir)
+            return self._fs_perform(wfin, degree, axis = axis)
         else:
             raise Exception
             
             
-    def _fs_perform(self, wfin, degree, dir = 1):
+    def _fs_perform(self, wfin, degree, axis = 1):
         # Use derivatives in Fourier space F(f'(x))=ik f(k), 
         if self.bc.lower() == 'zero':    
             raise NotImplementedError
@@ -121,7 +121,7 @@ class Derivative(object):
         
         return wfout
         
-    def _fd_perform(self, wfin, degree, dir = 1):
+    def _fd_perform(self, wfin, degree, axis = 1):
         mesh = self.mesh
         
         # Handle exceptions
