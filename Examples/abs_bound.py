@@ -250,6 +250,24 @@ def evolve_mask(ABWidth, k, type, verbose = True, anim = False, quick = False, *
         M = qp.scalar_pot(maskM)
         U = U*M
 
+    if type == 'mask_cap_ses':
+        theta  = 0.1
+        lam = 1.0
+        x0 = Radius - ABWidth
+        g = ses_g(type = 'tanh', lam = lam)
+        f = ses_f(g, theta = 0.2)
+        fM = qp.MeshFunction(f(box.points, x0), box)
+        GO = qp.Gradient(box)
+        LO = qp.Laplace(box)
+        DfM  = GO.apply(fM)
+        DDfM = LO.apply(fM)
+        V0 = DDfM/fM**3. - (5./8.) * DfM**2./fM**4.
+        V1 = DfM / fM**3.
+        V2 = 0.5*(1. - fM**(-2.))
+        Vcap = qp.scalar_pot(V0) + qp.scalar_pot(V1) * GO + qp.scalar_pot(V2) * LO
+        M = qp.exponential(Vcap, exp_step = -1j*dt) 
+        U = U*M
+
     if verbose:
         if 'Vcap' in locals():
             Vcap.write_info()
@@ -335,7 +353,7 @@ def evolve_mask(ABWidth, k, type, verbose = True, anim = False, quick = False, *
 # MAIN 
 ############
 
-N, Nex, NA, NAex, diff = evolve_mask(10., k =  20.0 , type = 'cap_sin2', 
+N, Nex, NA, NAex, diff = evolve_mask(2., k =  1 , type = 'mask_cap_ses', 
                                      quick = False, verbose = True, anim = True, eta = 0.2)
 
 print N, Nex, NA, NAex, diff
