@@ -99,7 +99,7 @@ class Derivative(object):
         if (self.strategy.lower() == 'fs' and self.cube is None):
             self.cube = Cube(self.mesh, Attributes = 'RS + FS') 
     
-    def perform(self, wfin, degree, axis = 1):
+    def perform(self, wfin, degree, axis = 0):
         if   (self.strategy.lower() == 'fd'):
             return self._fd_perform(wfin, degree, axis = axis)
         elif (self.strategy.lower() == 'fs'):
@@ -108,7 +108,7 @@ class Derivative(object):
             raise Exception
             
             
-    def _fs_perform(self, wfin, degree, axis = 1):
+    def _fs_perform(self, wfin, degree, axis = 0):
         # Use derivatives in Fourier space F(f'(x))=ik f(k), 
         if self.bc.lower() == 'zero':    
             raise NotImplementedError
@@ -121,7 +121,7 @@ class Derivative(object):
         
         return wfout
         
-    def _fd_perform(self, wfin, degree, axis = 1):
+    def _fd_perform(self, wfin, degree, axis = 0):
         mesh = self.mesh
         
         # Handle exceptions
