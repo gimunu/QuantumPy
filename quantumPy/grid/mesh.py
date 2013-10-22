@@ -120,7 +120,19 @@ class SubMesh(Mesh):
         super(SubMesh, self).__init__()
         self.mesh = mesh
         self.pindex = np.array([], dtype=int)
+        
+        self.dim        = mesh.dim
+        self.spacing    = mesh.spacing
+        self.properties = mesh.properties
+        self.info       = mesh.info
+        self.update()
 
+    def update(self):
+        self.i2c        = self.mesh.i2c[self.pindex]
+        # self.c2i        = self.mesh.c2i[self.pindex]
+        self.points     = self.mesh.points[self.pindex]       
+        
+        super(SubMesh, self).update()
 
 
 def submesh(func, mesh):
@@ -128,6 +140,7 @@ def submesh(func, mesh):
     for ii in range(mesh.np):
         if func(mesh.points[ii]):
             smesh.pindex = np.append(smesh.pindex, int(ii))
+    smesh.update()        
     return smesh
 
 #############################################
