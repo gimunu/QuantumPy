@@ -127,14 +127,14 @@ def ses_g(type = 'tanh', **kwds):
 
 def evolve_mask(ABWidth, k, type, verbose = True, anim = False, quick = False, **kwds):
 
-    dR = 0.1
+    dR = 0.1# 0.1
     dt = 0.01
-    sigma = np.sqrt(2.0)/abs(k)
+    sigma = 4.0 * np.sqrt(2.0)/abs(k)
     # dR = 0.25*sigma
     # dt = 0.005/(k**2/2) 
     Radius =  3*sigma + ABWidth 
     # Radius =  5 
-    T =  2.0 * Radius/abs(k)
+    T =  2. * Radius/abs(k)
 
     # qp.base.messages.DEBUG_LEVEL = qp.base.messages.DEBUG_STACKTRACE + 2
     # qp.base.messages.DEBUG_LEVEL = 2
@@ -347,13 +347,34 @@ def evolve_mask(ABWidth, k, type, verbose = True, anim = False, quick = False, *
     wfdiff = wft - wftEx
     diff = (wfdiff.conjugate()*wfdiff).integrate(intRegion).real
     diff = wfdiff.norm2(intRegion).real
+    
+    # # calculate the reflection coefficients with ffts
+    # print intRegion.points
+    # print wft[intRegion.pindex]
+    # cube = qp.Cube(intRegion, Attributes = 'RS + FS') 
+    # cwft = qp.mesh_to_cube(wft[intRegion.pindex], cube)
+    # cwfEx0 = qp.mesh_to_cube(gaussian_wpT(box, sigma, k, 0.0)[intRegion.pindex], cube)
+    # FcwfEx0 = qp.base.math.rs_to_fs(cwfEx0)
+    # Fcwft = qp.base.math.rs_to_fs(cwft)
+    # 
+    # pl.figure(0)
+    # pl.plot(cube.FSpoints, np.abs(FcwfEx0)**2, lw = 2, label='FcwfEx0')
+    # pl.plot(cube.FSpoints, np.abs(Fcwft)**2, lw = 2, label='Fcwft')
+    # pl.plot(cube.FSpoints, np.abs(Fcwft)**2/np.abs(FcwfEx0)**2, lw = 2, marker='o',label='R')
+    # # pl.xscale('log')
+    # # pl.xlim([0,1e6])
+    # pl.legend()
+    # pl.ioff()
+    # pl.show()
+    
     return (N, NEx, NA, NAEx, diff)
 
 #############    
 # MAIN 
 ############
+if __name__ == '__main__':
 
-N, Nex, NA, NAex, diff = evolve_mask(2., k =  1 , type = 'mask_cap_ses', 
-                                     quick = False, verbose = True, anim = True, eta = 0.2)
+    N, Nex, NA, NAex, diff = evolve_mask(20, k =  2 , type = 'cap_sin2', 
+                                         quick = False, verbose = True, anim = True, eta = 0.2)
 
-print N, Nex, NA, NAex, diff
+    print N, Nex, NA, NAex, diff
