@@ -163,7 +163,7 @@ def evolve_mask(ABWidth, k, type, verbose = True, anim = False, quick = False, *
         H += Vcap  
 
     if type == 'cap_poly':
-        eta = kwds.get('eta', 0.3)
+        eta = kwds.get('eta', 0.03)
         impotf = Impotf(ABWidth, height = -1j * eta, type = 'poly', order = kwds.get('order', 3))
         impotM = qp.MeshFunction(impotf(box.points), box)
         Vcap = qp.scalar_pot(impotM, box)
@@ -245,7 +245,7 @@ def evolve_mask(ABWidth, k, type, verbose = True, anim = False, quick = False, *
         U = U*M
 
     if type == 'mask_cap_poly':
-        eta = kwds.get('eta', 0.3)
+        eta = kwds.get('eta', 0.03)
         impotf = Impotf(ABWidth, height = -1j * eta, type = 'poly', order = 3)
         impotM = qp.MeshFunction(impotf(box.points), box)
         maskM = np.exp(-1j * dt * impotM)
@@ -376,7 +376,7 @@ def evolve_mask(ABWidth, k, type, verbose = True, anim = False, quick = False, *
 ############
 if __name__ == '__main__':
 
-    N, Nex, NA, NAex, diff = evolve_mask(5, k =  10 , type = 'cap_sin2', 
-                                         quick = False, verbose = True, anim = True, eta = 0.2)
+    N, Nex, NA, NAex, diff = evolve_mask(5, k =  8 , type = 'cap_poly', 
+                                         quick = False, verbose = True, anim = True, eta = 0.03)
 
     print N, Nex, NA, NAex, diff
