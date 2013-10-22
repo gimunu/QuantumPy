@@ -151,7 +151,9 @@ def evolve_mask(ABWidth, k, type, verbose = True, anim = False, quick = False, *
     maskM = None
 
 
-    H = qp.hamiltonian(box) 
+    # H = qp.hamiltonian(box, Strategy = 'fs', Bc = 'periodic') 
+    # H = qp.hamiltonian(box, Strategy = 'fd', Bc = 'zero', Order = 4 ) 
+    H = qp.hamiltonian(box)
 
     if type == 'cap_sin2':
         eta = kwds.get('eta', 0.2)
@@ -161,8 +163,8 @@ def evolve_mask(ABWidth, k, type, verbose = True, anim = False, quick = False, *
         H += Vcap  
 
     if type == 'cap_poly':
-        eta = 0.2
-        impotf = Impotf(ABWidth, height = -1j * eta, type = 'poly', order = 3)
+        eta = kwds.get('eta', 0.3)
+        impotf = Impotf(ABWidth, height = -1j * eta, type = 'poly', order = kwds.get('order', 3))
         impotM = qp.MeshFunction(impotf(box.points), box)
         Vcap = qp.scalar_pot(impotM, box)
         H += Vcap  
@@ -193,8 +195,8 @@ def evolve_mask(ABWidth, k, type, verbose = True, anim = False, quick = False, *
         
 
     if type == 'cap_ses':
-        theta  = 0.1
-        lam = 1.0
+        theta  = kwds.get('theta', 0.1)
+        lam = kwds.get('lambda', 1.0)
         x0 = Radius - ABWidth
         g = ses_g(type = 'tanh', lam = lam)
         f = ses_f(g, theta = 0.2)
@@ -228,14 +230,14 @@ def evolve_mask(ABWidth, k, type, verbose = True, anim = False, quick = False, *
         Ubox = qp.scalar_pot(mask(12*dR, type = 'unit_box'), box)
         U *= Ubox
 
-    if type == 'mask':
+    if type == 'mask_sin2':
         maskf = mask(ABWidth)
         maskM = qp.MeshFunction(maskf(box.points), box)
         M = qp.scalar_pot(maskf)
         U = U*M
 
     if type == 'mask_cap_sin2':
-        eta = 0.2
+        eta = kwds.get('eta', 0.2)
         impotf = Impotf(ABWidth, height = -1j * eta)
         impotM = qp.MeshFunction(impotf(box.points), box)
         maskM = np.exp(-1j * dt * impotM)
@@ -243,7 +245,7 @@ def evolve_mask(ABWidth, k, type, verbose = True, anim = False, quick = False, *
         U = U*M
 
     if type == 'mask_cap_poly':
-        eta = 0.2
+        eta = kwds.get('eta', 0.3)
         impotf = Impotf(ABWidth, height = -1j * eta, type = 'poly', order = 3)
         impotM = qp.MeshFunction(impotf(box.points), box)
         maskM = np.exp(-1j * dt * impotM)
@@ -251,8 +253,8 @@ def evolve_mask(ABWidth, k, type, verbose = True, anim = False, quick = False, *
         U = U*M
 
     if type == 'mask_cap_ses':
-        theta  = 0.1
-        lam = 1.0
+        theta  = kwds.get('theta', 0.1)
+        lam = kwds.get('lambda', 1.0)
         x0 = Radius - ABWidth
         g = ses_g(type = 'tanh', lam = lam)
         f = ses_f(g, theta = 0.2)
@@ -374,7 +376,7 @@ def evolve_mask(ABWidth, k, type, verbose = True, anim = False, quick = False, *
 ############
 if __name__ == '__main__':
 
-    N, Nex, NA, NAex, diff = evolve_mask(20, k =  2 , type = 'cap_sin2', 
+    N, Nex, NA, NAex, diff = evolve_mask(5, k =  10 , type = 'cap_sin2', 
                                          quick = False, verbose = True, anim = True, eta = 0.2)
 
     print N, Nex, NA, NAex, diff
