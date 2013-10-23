@@ -207,7 +207,10 @@ def evolve_mask(ABWidth, k, type, verbose = True, anim = False, quick = False, *
         LO = qp.Laplace(box)
         GMm = GO.apply(Mm)
         LMm = LO.apply(Mm)
-        impotM =  1j/dt * Mm  - 1./4.*LMm - 1./12. * GMm**2  
+        if kwds.get('LeadingOrderOnly', False):
+            impotM =  1j/dt * Mm  
+        else:             
+            impotM =  1j/dt * Mm  - 1./4.*LMm - 1./12. * GMm**2  
         # pl.plot(box.points, impotM.real, lw = 2, label='Re[Impot]')    
         # pl.plot(box.points, impotM.imag, lw = 2, label='Im[Impot]')
         # # pl.legend()
@@ -249,19 +252,19 @@ def evolve_mask(ABWidth, k, type, verbose = True, anim = False, quick = False, *
         # exit()
         
         
-    U = qp.td.propagator(H, method = 'etrs', exp_order = 4)
+    U = qp.td.propagator(H, method = 'etrs', exp_order =  kwds.get('exp_order', 4))
 
     if type == 'cap_poly' :
         # force the wavefuncion at the edges to be well beaved
         # by setting to zero the stencil points at the boundaries
         Ubox = qp.scalar_pot(mask(12*dR, type = 'unit_box'), box)
-        U *= Ubox
+        U = Ubox *U
 
     if type == 'cap_mask' or type == 'cap_ses':
         # force the wavefuncion at the edges to be well beaved
         # by setting to zero the stencil points at the boundaries
         Ubox = qp.scalar_pot(mask(12*dR, type = 'unit_box'), box)
-        U *= Ubox
+        U = Ubox*U
 
     if type == 'mask_sin2':
         maskf = mask(ABWidth)
@@ -355,7 +358,7 @@ def evolve_mask(ABWidth, k, type, verbose = True, anim = False, quick = False, *
             DT = t2 - t1
             t1 = t2   
             if verbose :
-                print "%d\t %s \t%f \t%f \t%f \t%2.3f"%(i, i*dt, E.real, N, NEx, DT)
+                print "%d\t %s \t%f \t%f \t%f \t(%2.3f s) -- %e"%(i, i*dt, E.real, N, NEx, DT, wft[-1].real)
                 
             
     
@@ -409,7 +412,7 @@ def evolve_mask(ABWidth, k, type, verbose = True, anim = False, quick = False, *
 ############
 if __name__ == '__main__':
 
-    N, Nex, NA, NAex, diff = evolve_mask(20, k =  10 , type = 'cap_cosh', 
-                                         quick = False, verbose = True, anim = True, U = 100)
+    N, Nex, NA, NAex, diff = evolve_mask(50, k =  10 , type = 'cap_mask', 
+                                         quick = False, verbose = True, anim = True, eta = 0.2, exp_order = 8, LeadingOrderOnly = True)
 
     print N, Nex, NA, NAex, diff
