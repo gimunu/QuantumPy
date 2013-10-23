@@ -76,7 +76,7 @@ def mask (widht, RB = None, type = 'sin2'):
                 
     return func
 
-def Impotf (widht, height, type = 'sin2', order = 3):
+def Impotf (widht, height, type = 'sin2', order = 3, **kwds):
     
     if type == 'sin2':    
         def sin2(x, wd = widht, h = height):
@@ -106,6 +106,22 @@ def Impotf (widht, height, type = 'sin2', order = 3):
             return h * y 
                 
         return poly
+
+    elif type == 'cosh':
+        alpha = kwds.pop('alpha', 3.* 2./widht)
+        def cosh(x, wd = widht, h = height, alpha = alpha):
+            y = x.copy()
+            y[:] = 0.0 
+            R = np.abs(x.max())
+            for i, value in np.ndenumerate(x):
+                dd = np.abs(np.abs(x[i])-R) 
+                if dd < wd:
+                    y[i] = 1/np.cosh(alpha * dd)**2
+                else:
+                    y[i] = 0.0
+            return h * y 
+                
+        return cosh
 
 # Smooth exterior complex scaling
 def ses_f(g_func, theta):
@@ -152,8 +168,8 @@ def evolve_mask(ABWidth, k, type, verbose = True, anim = False, quick = False, *
 
 
     # H = qp.hamiltonian(box, Strategy = 'fs', Bc = 'periodic') 
-    # H = qp.hamiltonian(box, Strategy = 'fd', Bc = 'zero', Order = 4 ) 
-    H = qp.hamiltonian(box)
+    H = qp.hamiltonian(box, Strategy = 'fd', Bc = 'zero', Order = 4 ) 
+    # H = qp.hamiltonian(box)
 
     if type == 'cap_sin2':
         eta = kwds.get('eta', 0.2)
@@ -168,6 +184,17 @@ def evolve_mask(ABWidth, k, type, verbose = True, anim = False, quick = False, *
         impotM = qp.MeshFunction(impotf(box.points), box)
         Vcap = qp.scalar_pot(impotM, box)
         H += Vcap  
+
+    if type == 'cap_cosh':
+        NN = 6.
+        alpha = kwds.get('alpha', NN* 2./ABWidth)
+        n = 1
+        U = kwds.get('U', (alpha**2/8) * ((2*n + 1)**2 + 1))
+        impotf = Impotf(ABWidth, height = -1j * U, type = 'cosh', alpha = alpha)
+        impotM = qp.MeshFunction(impotf(box.points), box)
+        Vcap = qp.scalar_pot(impotM, box)
+        H += Vcap  
+
         
     if type == 'cap_mask':
         maskf = mask(ABWidth, RB = Radius + 0.*dR)
@@ -224,7 +251,13 @@ def evolve_mask(ABWidth, k, type, verbose = True, anim = False, quick = False, *
         
     U = qp.td.propagator(H, method = 'etrs', exp_order = 4)
 
-    if type == 'cap_mask' or type == 'cap_ses' :
+    if type == 'cap_poly' :
+        # force the wavefuncion at the edges to be well beaved
+        # by setting to zero the stencil points at the boundaries
+        Ubox = qp.scalar_pot(mask(12*dR, type = 'unit_box'), box)
+        U *= Ubox
+
+    if type == 'cap_mask' or type == 'cap_ses':
         # force the wavefuncion at the edges to be well beaved
         # by setting to zero the stencil points at the boundaries
         Ubox = qp.scalar_pot(mask(12*dR, type = 'unit_box'), box)
@@ -376,7 +409,7 @@ def evolve_mask(ABWidth, k, type, verbose = True, anim = False, quick = False, *
 ############
 if __name__ == '__main__':
 
-    N, Nex, NA, NAex, diff = evolve_mask(5, k =  8 , type = 'cap_poly', 
-                                         quick = False, verbose = True, anim = True, eta = 0.03)
+    N, Nex, NA, NAex, diff = evolve_mask(20, k =  10 , type = 'cap_cosh', 
+                                         quick = False, verbose = True, anim = True, U = 100)
 
     print N, Nex, NA, NAex, diff
