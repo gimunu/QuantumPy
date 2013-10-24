@@ -133,12 +133,29 @@ def ses_f(g_func, theta):
     return f
     
 def ses_g(type = 'tanh', **kwds):
-    lam = kwds.get('lam', 1)    
-    def g(x, x0, lam = lam):
-        y = x.copy()
-        y[:] = 0.0
-        y = 1. + 0.5 * (np.tanh(lam*(x - x0)) - np.tanh(lam*(x + x0)))
-        return y
+    
+    if type == 'tanh':  
+        lam = kwds.get('lam', 1)    
+        def g(x, x0, lam = lam):
+            y = x.copy()
+            y[:] = 0.0
+            y = 1. + 0.5 * (np.tanh(lam*(x - x0)) - np.tanh(lam*(x + x0)))
+            return y
+    elif type == 'sin2':
+        def g(x, x0):
+            y = x.copy()
+            y[:] = 0.0 
+            R = np.abs(x.max())
+            wd = abs(R - x0)
+            for i, value in np.ndenumerate(x):
+                dd = np.abs(np.abs(x[i])-R) 
+                if dd < wd:
+                    y[i] = 1 - np.sin(dd/wd * np.pi/2)**2
+                else:
+                    y[i] = 0.0
+            return y 
+            
+                
     return g
 
 def evolve_mask(ABWidth, k, type, verbose = True, anim = False, quick = False, **kwds):
@@ -231,11 +248,12 @@ def evolve_mask(ABWidth, k, type, verbose = True, anim = False, quick = False, *
 
     if type == 'cap_ses':
         theta  = kwds.get('theta', 0.1)
-        lam = kwds.get('lambda', 1.0)
+        lam = kwds.get('lam', 1.0)
         x0 = Radius - ABWidth
-        g = ses_g(type = 'tanh', lam = lam)
+        g = ses_g(type = kwds.get('gfunc','tanh'), lam = lam)
         f = ses_f(g, theta = 0.2)
         fM = qp.MeshFunction(f(box.points, x0), box)
+        maskM = fM
         GO = qp.Gradient(box)
         LO = qp.Laplace(box)
         DfM  = GO.apply(fM)
@@ -295,7 +313,7 @@ def evolve_mask(ABWidth, k, type, verbose = True, anim = False, quick = False, *
 
     if type == 'mask_cap_ses':
         theta  = kwds.get('theta', 0.1)
-        lam = kwds.get('lambda', 1.0)
+        lam = kwds.get('lam', 1.0)
         x0 = Radius - ABWidth
         g = ses_g(type = 'tanh', lam = lam)
         f = ses_f(g, theta = 0.2)
@@ -341,9 +359,12 @@ def evolve_mask(ABWidth, k, type, verbose = True, anim = False, quick = False, *
         if   type == 'cap_ses':
             line.axes.set_ylim(-0.2,0.5)
         elif type == 'mask_cap_ses':
-            line.axes.set_ylim(-0.2,1.2)
+            line.axes.set_ylim(-0.1,1.2)
         else:    
             line.axes.set_ylim(-0.01,1.0)
+        
+        pl.axvline(x = Radius - ABWidth ,    color='black', ls = '--')
+        pl.axvline(x = - (Radius - ABWidth), color='black', ls = '--' )
              
         # lineEx, =pl.plot(wftEx.mesh.points, (wftEx.conjugate()*wftEx).real, color = 'R', label='|wfexact|^2')
         lineEx, =qp.plot((wftEx.conjugate()*wftEx).real, color = 'R', label='|wfexact|^2')
@@ -437,7 +458,7 @@ def evolve_mask(ABWidth, k, type, verbose = True, anim = False, quick = False, *
 ############
 if __name__ == '__main__':
 
-    N, Nex, NA, NAex, diff = evolve_mask(5, k =  2 , type = 'mask_cap_ses', 
+    N, Nex, NA, NAex, diff = evolve_mask(10, k =  2 , type = 'cap_ses', gfunc = 'sin2',  
                                          quick = False, verbose = True, anim = True)
 
     print N, Nex, NA, NAex, diff
