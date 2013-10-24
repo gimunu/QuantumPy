@@ -300,11 +300,16 @@ def evolve_mask(ABWidth, k, type, verbose = True, anim = False, quick = False, *
         DfM  = GO.apply(fM)
         DDfM = LO.apply(fM)
         V0 = DDfM/fM**3. - (5./8.) * DfM**2./fM**4.
+        maskM = np.exp(-1j * dt * V0)
         V1 = DfM / fM**3.
         V2 = 0.5*(1. - fM**(-2.))
         Vcap = qp.scalar_pot(V0) + qp.scalar_pot(V1) * GO + qp.scalar_pot(V2) * LO
-        M = qp.exponential(Vcap, exp_step = -1j*dt) 
+        M = qp.exponential(Vcap, exp_step = -1j*dt, order =  kwds.get('mask_exp_order', 4)) 
         U = U*M
+        #force borders to be zero 
+        Ubox = qp.scalar_pot(mask(12*dR, type = 'unit_box'), box)
+        U = Ubox*U
+        
 
     if verbose:
         if 'Vcap' in locals():
@@ -412,7 +417,7 @@ def evolve_mask(ABWidth, k, type, verbose = True, anim = False, quick = False, *
 ############
 if __name__ == '__main__':
 
-    N, Nex, NA, NAex, diff = evolve_mask(50, k =  10 , type = 'cap_mask', 
-                                         quick = False, verbose = True, anim = True, eta = 0.2, exp_order = 8, LeadingOrderOnly = True)
+    N, Nex, NA, NAex, diff = evolve_mask(5, k =  1 , type = 'mask_cap_ses', 
+                                         quick = False, verbose = True, anim = True)
 
     print N, Nex, NA, NAex, diff
