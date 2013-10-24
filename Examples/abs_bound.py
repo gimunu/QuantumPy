@@ -167,6 +167,11 @@ def evolve_mask(ABWidth, k, type, verbose = True, anim = False, quick = False, *
     maskM = None
 
 
+    # The initial wavepackets
+    wft   = gaussian_wp(box, sigma, k)
+    wftEx = gaussian_wpT(box, sigma, k, 0.0)
+
+
     # H = qp.hamiltonian(box, Strategy = 'fs', Bc = 'periodic') 
     H = qp.hamiltonian(box, Strategy = 'fd', Bc = 'zero', Order = 4 ) 
     # H = qp.hamiltonian(box)
@@ -242,7 +247,7 @@ def evolve_mask(ABWidth, k, type, verbose = True, anim = False, quick = False, *
         # Vcap =  V1 * GO + LO * V2  + V0
         H += Vcap
         
-        impotM = fM
+        impotM = Vcap.apply(wft)
         # pl.plot(box.points, fM, lw = 2) 
         # pl.plot(box.points, V0, lw = 2, label = 'V0') 
         # pl.plot(box.points, V1, lw = 2, label = 'V1') 
@@ -317,28 +322,32 @@ def evolve_mask(ABWidth, k, type, verbose = True, anim = False, quick = False, *
         H.write_info()
         U.write_info()
 
-    wft   = gaussian_wp(box, sigma, k)
-    wftEx = gaussian_wpT(box, sigma, k, 0.0)
 
     if anim and not quick:
         pl.ion()
         if maskM != None:
             # pl.plot(wft.mesh.points, maskM.real, lw = 2, label='Mask')
             # pl.plot(wft.mesh.points, maskM.imag, lw = 2, label='Im[Mask]')
-            qp.plot(maskM.real, lw = 2, label='Mask')
-            qp.plot(maskM.imag, lw = 2, label='Im[Mask]')
+            lineMRE, = qp.plot(maskM.real, lw = 2, label='Mask')
+            lineMIM, = qp.plot(maskM.imag, lw = 2, label='Im[Mask]')
         if impotM != None:            
             # pl.plot(wft.mesh.points, abs(impotM.real), lw = 2, label='Re[Impot]')    
             # pl.plot(wft.mesh.points, abs(impotM.imag), lw = 2, label='Im[Impot]')
-            qp.plot(abs(impotM.real), lw = 2, label='Re[Impot]')    
-            qp.plot(abs(impotM.imag), lw = 2, label='Im[Impot]')
+            lineCAPRE, = qp.plot(abs(impotM.real), lw = 2, label='Re[Impot]')    
+            lineCAPIM, = qp.plot(abs(impotM.imag), lw = 2, label='Im[Impot]')
         # line, =pl.plot(wft.mesh.points, (wft.conjugate()*wft).real, color = 'G', marker='o', label='|wf0|^2')
         line, = qp.plot((wft.conjugate()*wft).real, color = 'G', marker='o', label='|wf0|^2')
         line.axes.set_xlim(-Radius,Radius) 
-        line.axes.set_ylim(-0.01,1.0) 
+        if   type == 'cap_ses':
+            line.axes.set_ylim(-0.2,0.5)
+        elif type == 'mask_cap_ses':
+            line.axes.set_ylim(-0.2,1.2)
+        else:    
+            line.axes.set_ylim(-0.01,1.0)
+             
         # lineEx, =pl.plot(wftEx.mesh.points, (wftEx.conjugate()*wftEx).real, color = 'R', label='|wfexact|^2')
         lineEx, =qp.plot((wftEx.conjugate()*wftEx).real, color = 'R', label='|wfexact|^2')
-        pl.legend()
+        pl.legend( loc='upper left')
         pl.draw()
 
     if verbose:
@@ -355,7 +364,18 @@ def evolve_mask(ABWidth, k, type, verbose = True, anim = False, quick = False, *
             E   = H.expectationValue(wft)
             wftEx = gaussian_wpT(box, sigma, k, T)
             NEx = (wftEx.conjugate()*wftEx).integrate().real
+                
             if anim:
+                if type == 'mask_cap_ses':                
+                    maskM = np.exp(-1j*dt * Vcap.apply(wft))
+                    lineMRE.set_ydata(maskM.real)
+                    lineMIM.set_ydata(maskM.imag)
+                    
+                if type == 'cap_ses':                
+                    impotM = Vcap.apply(wft)
+                    lineCAPRE.set_ydata(impotM.real)
+                    lineCAPIM.set_ydata(impotM.imag)
+                    
                 line.set_ydata((wft.conjugate()*wft).real)
                 lineEx.set_ydata((wftEx.conjugate()*wftEx).real)
                 pl.draw()
@@ -417,7 +437,7 @@ def evolve_mask(ABWidth, k, type, verbose = True, anim = False, quick = False, *
 ############
 if __name__ == '__main__':
 
-    N, Nex, NA, NAex, diff = evolve_mask(5, k =  1 , type = 'mask_cap_ses', 
+    N, Nex, NA, NAex, diff = evolve_mask(5, k =  2 , type = 'mask_cap_ses', 
                                          quick = False, verbose = True, anim = True)
 
     print N, Nex, NA, NAex, diff
