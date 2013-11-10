@@ -458,7 +458,7 @@ def evolve_mask(ABWidth, k, type, verbose = True, anim = False, quick = False, *
 ############
 if __name__ == '__main__':
 
-    N, Nex, NA, NAex, diff = evolve_mask(10, k =  2 , type = 'cap_ses', gfunc = 'sin2',  
+    N, Nex, NA, NAex, diff = evolve_mask(10, k =  20 , type = 'cap_sin2', eta = 0.01,  
                                          quick = False, verbose = True, anim = True)
 
     print N, Nex, NA, NAex, diff
