@@ -17,7 +17,7 @@
 
 import numpy as np
 
-__all__ = ['base', 'grid', 'operators', 'td', 'graph', 'build']
+__all__ = ['base', 'grid', 'operators', 'td', 'graph', 'build', 'classical']
 
 for module in __all__:
     exec 'from . import {0}'.format(module)
