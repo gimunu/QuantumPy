@@ -33,7 +33,8 @@ class SimulationBox(object):
     def __init__(self, **kwds):
         super(SimulationBox, self).__init__()
         self.dim = kwds.get('dim', 1)
-        self.shape = kwds.get('shape', None)
+        self.size   = np.array([1.0]*self.dim)
+        self.center = np.array([0.0]*self.dim)
         
     def write_info():
         pass
@@ -62,9 +63,19 @@ class PointParticle(object):
         # Should the particle be locked at its current position?
         self.locked = np.array(kwds.get('locked', False))
 
+        # Record the trajectory?
+        self.record = False
+        self.trajectory = np.array([])
+        
 
     def __str__(self):
         return "Particle <M=%s, Q=%s; pos=%s, vel=%s>"%(self.mass, self.charge, self.currentPos, self.velocity)
+
+    def record_start(self):
+        self.record = True
+
+    def record_stop(self):
+        self.record = False
 
     def kinetic_energy(self):
         return np.dot(self.velocity, self.velocity)/(2.*self.mass)
@@ -130,7 +141,7 @@ class Force(object):
         self.info    = kwds.get('info'   , None)
         
 
-        self.forces  = []
+        self.forces  = [self]
         # self.expr    = BinaryTree(self)
 
         self.forceField = None 
@@ -153,4 +164,10 @@ class Force(object):
            pass 
             # wfout = self._evaluate(self.expr, wfin, side, **kwds)
         
-        return F                
+        return F  
+
+    def __iter__(self):
+        if self:
+            for elem in self.forces:
+                yield elem
+                      
