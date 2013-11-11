@@ -64,18 +64,22 @@ class PointParticle(object):
         self.locked = np.array(kwds.get('locked', False))
 
         # Record the trajectory?
-        self.record = False
+        self.rec = False
         self.trajectory = np.array([])
         
 
     def __str__(self):
         return "Particle <M=%s, Q=%s; pos=%s, vel=%s>"%(self.mass, self.charge, self.currentPos, self.velocity)
 
+    def record(self):
+        self.trajectory=np.append(self.trajectory, [self.currentPos], axis = 0)
+
     def record_start(self):
-        self.record = True
+        self.rec = True
+        self.trajectory=np.array([self.currentPos])
 
     def record_stop(self):
-        self.record = False
+        self.rec = False
 
     def kinetic_energy(self):
         return np.dot(self.velocity, self.velocity)/(2.*self.mass)
@@ -142,6 +146,10 @@ class Propagator(object):
             self.velverlet(particles)
         else:
             raise Exception
+        
+        for p in particles:
+            if p.rec:
+                p.record()    
             
         # for i in range(ITERATE):
         #     self.satisfyConstraints()

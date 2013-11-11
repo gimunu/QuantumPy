@@ -28,6 +28,7 @@ dim = 2
 sb = qp.classical.SimulationBox(dim=dim, size = [10.0]*dim)
 
 electron = qp.classical.PointParticle(sbox = sb, velocity = [0., 1.5], position = [2.0, 0.0], charge = -1.0)
+
 print electron
 
 # F = qp.classical.constant_force(sb, [-0.5,-0.5])
@@ -39,9 +40,14 @@ F.write_info()
 
 anim = True
 
+e1 = qp.classical.PointParticle(sbox = sb, velocity = [0., 1.5], position = [2.0, 0.0], charge = -1.0)
+e1.record_start()
+
 if anim:
     pl.ion()
     line, = pl.plot(electron.currentPos[0], electron.currentPos[1], 'bo', label='e')
+    line1,  = pl.plot(e1.currentPos[0], e1.currentPos[1], 'go', label='e1')
+    line1_, = pl.plot(e1.trajectory[0,0], e1.trajectory[0,1],  label='t1')
     pl.plot(proton.currentPos[0], proton.currentPos[1], 'ro', label='p')
     line.axes.set_xlim(-10,10)
     line.axes.set_ylim(-5,5)
@@ -57,14 +63,21 @@ U.write_info()
 
 U.initialize([electron])
 
+U1 =  qp.classical.Propagator(F, dt = dt, method = 'verlet')
+U1.initialize([e1])
+
 for i in range(0, int(final_time/dt)):
     time = i*dt
     U.apply([electron], time = time)
+    U1.apply([e1], time = time)
     T = electron.kinetic_energy()
 
-    print time, T, electron.velocity[:], electron.currentPos[:], electron.forces
-
+    # print time, T, electron.velocity[:], electron.currentPos[:], electron.forces
     if anim:            
         line.set_xdata(electron.currentPos[0])
         line.set_ydata(electron.currentPos[1])
+        line1.set_xdata(e1.currentPos[0])
+        line1.set_ydata(e1.currentPos[1])
+        line1_.set_xdata(e1.trajectory[:,0])
+        line1_.set_ydata(e1.trajectory[:,1])
         pl.draw()
