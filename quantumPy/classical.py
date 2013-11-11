@@ -195,6 +195,12 @@ def null_force(sb, vec):
 
 
 def constant_force(sb, vec):
+
+    dimvec = len(vec)
+    if dimvec<sb.dim:
+        v = [0.0]*sb.dim
+        v[0:dimvec] = vec[0:dimvec]
+        vec = v 
     
     def forcefield(p, **kwds):
         return vec[0:sb.dim] #if (p.shape[0] >= np.array(vec).shape[0])
