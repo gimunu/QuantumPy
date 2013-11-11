@@ -27,19 +27,30 @@ import quantumPy as qp
 dim = 2
 sb = qp.classical.SimulationBox(dim=dim)
 
-electron = qp.classical.PointParticle(sbox = sb, velocity = [1.0]*dim, position = [2.0]*dim, charge = -1.0)
+electron = qp.classical.PointParticle(sbox = sb, velocity = [0.1]*dim, position = [0.0]*dim, charge = -1.0)
 print electron
 
 F = qp.classical.Force(sb)
 F.write_info()
 
+anim = True
+
+if anim:
+    pl.ion()
+    line, = pl.plot(electron.currentPos[0], electron.currentPos[1], 'bo', label='e')
+    line.axes.set_xlim(-10,10)
+    line.axes.set_ylim(-5,5)
+         
+    pl.legend( loc='upper left')
+    pl.draw()
+
 dt = 0.1
 final_time = 10
 
-U =  qp.classical.Propagator([F], dt = dt)
+U =  qp.classical.Propagator(F, dt = dt)
 
 U.initialize([electron])
-print  electron.velocity[:], electron.currentPos[:],  electron.oldPos[:]
+
 for i in range(0, int(final_time/dt)):
     time = i*dt
     U.apply([electron], time = time)
@@ -47,3 +58,7 @@ for i in range(0, int(final_time/dt)):
 
     print time, T, electron.velocity[:], electron.currentPos[:],  electron.oldPos[:]
 
+    if anim:            
+        line.set_xdata(electron.currentPos[0])
+        line.set_ydata(electron.currentPos[1])
+        pl.draw()
