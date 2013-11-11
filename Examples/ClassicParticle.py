@@ -24,9 +24,26 @@ import pylab as pl
 
 import quantumPy as qp
 
-electon = qp.classical.PointParticle(position = [2.0], charge = -1.0)
+dim = 2
+sb = qp.classical.SimulationBox(dim=dim)
 
-U =  qp.classical.Propagator(dt = 0.1)
+electron = qp.classical.PointParticle(sbox = sb, velocity = [1.0]*dim, position = [2.0]*dim, charge = -1.0)
+print electron
 
+F = qp.classical.Force(sb)
+F.write_info()
 
-print electon
+dt = 0.1
+final_time = 10
+
+U =  qp.classical.Propagator([F], dt = dt)
+
+U.initialize([electron])
+print  electron.velocity[:], electron.currentPos[:],  electron.oldPos[:]
+for i in range(0, int(final_time/dt)):
+    time = i*dt
+    U.apply([electron], time = time)
+    T = electron.kinetic_energy()
+
+    print time, T, electron.velocity[:], electron.currentPos[:],  electron.oldPos[:]
+
