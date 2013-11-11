@@ -105,6 +105,7 @@ class Propagator(object):
         # Velocity Verlet integration step:
         for p in particles:
             if not p.locked:
+                # r(t+dt)
                 p.currentPos = p.currentPos + p.velocity*self.dt + 0.5*p.forces/p.mass * self.dt**2.
                 # v(t+dt/2)
                 p.velocity = p.velocity + 0.5*p.forces/p.mass * self.dt
@@ -125,13 +126,9 @@ class Propagator(object):
 
     def accumulateTotalForces(self, **kwds):
         particles = kwds.get('particles', None)
-
-        for p in particles:
-            p.forces = np.array([0.0]*p.dim)
         
         for p in particles:
-            for F in self.forces:
-                p.forces += F.evaluate(p, **kwds)
+            self.accumulateForces(particle = p)
     
     def apply(self, particles, **kwds):
         self.dt   = kwds.get('dt'  , self.dt)
