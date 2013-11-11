@@ -91,7 +91,7 @@ class Propagator(object):
         super(Propagator, self).__init__()
         self.forces   = forces
         self.dt       = kwds.get('dt', 0.1)
-        self.method    = kwds.get('method', 'verlet')
+        self.method    = kwds.get('method', 'velverlet')
         self.time = 0.0    
         
     def verlet(self, particles):
