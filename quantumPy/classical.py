@@ -159,7 +159,7 @@ class Force(object):
         
         if getattr(self, 'forcefield'):
             forcefield = getattr(self, 'forcefield')
-            F = forcefield(particle.currentPos[:], **kwds)
+            F = forcefield(particle, **kwds)
         # else:
         #    pass 
         #     # wfout = self._evaluate(self.expr, wfin, side, **kwds)
@@ -209,6 +209,37 @@ def constant_force(sb, vec):
     F.name    = 'Constant'
     F.symbol  = 'F'
     F.formula = '%s'%(vec)
+        
+    F.set_forcefield(forcefield)    
+    return F
+
+
+def electrostatic_force(sb, point, const = 1.0):
+
+    def forcefield(p, **kwds):
+        R = p.currentPos - point.currentPos
+        nR = np.dot(R,R)
+        return const * point.charge *p.charge * R /nR**(3./2.)  
+
+    F = Force(sb)
+    F.name    = 'Electrostatic'
+    F.symbol  = 'E'
+    F.formula = 'C * Q * q r/||R-r||^2 \n C=%1.4e \n Q=%s \n R=%s'%(const, point.charge, point.currentPos)
+        
+    F.set_forcefield(forcefield)    
+    return F
+
+
+def harmonic_force(sb, point, k = 1.0, damping = 0.0):
+
+    def forcefield(p, **kwds):
+        R = p.currentPos - point.currentPos
+        return -k * R  - damping * p.velocity
+
+    F = Force(sb)
+    F.name    = 'Spring'
+    F.symbol  = 'Fs'
+    F.formula = '-k * (r - R)\n C=%1.4e \n R=%s'%(k, point.currentPos)
         
     F.set_forcefield(forcefield)    
     return F
