@@ -25,12 +25,16 @@ import pylab as pl
 import quantumPy as qp
 
 dim = 2
-sb = qp.classical.SimulationBox(dim=dim)
+sb = qp.classical.SimulationBox(dim=dim, size = [10.0]*dim)
 
-electron = qp.classical.PointParticle(sbox = sb, velocity = [0.1]*dim, position = [0.0]*dim, charge = -1.0)
+electron = qp.classical.PointParticle(sbox = sb, velocity = [0., 0.0], position = [2.0, 0.0], charge = -1.0)
 print electron
 
-F = qp.classical.Force(sb)
+# F = qp.classical.constant_force(sb, [-0.5,-0.5])
+proton = qp.classical.PointParticle(sbox =sb , charge = 1.0, locked = True, position = [0.0]*dim )
+# F = qp.classical.electrostatic_force(sb, proton)
+F = qp.classical.harmonic_force(sb, proton, damping = 0.5)
+# F = qp.classical.Force(sb)
 F.write_info()
 
 anim = True
@@ -38,6 +42,7 @@ anim = True
 if anim:
     pl.ion()
     line, = pl.plot(electron.currentPos[0], electron.currentPos[1], 'bo', label='e')
+    pl.plot(proton.currentPos[0], proton.currentPos[1], 'ro', label='p')
     line.axes.set_xlim(-10,10)
     line.axes.set_ylim(-5,5)
          
@@ -45,7 +50,7 @@ if anim:
     pl.draw()
 
 dt = 0.1
-final_time = 10
+final_time = 50
 
 U =  qp.classical.Propagator(F, dt = dt)
 
@@ -56,7 +61,7 @@ for i in range(0, int(final_time/dt)):
     U.apply([electron], time = time)
     T = electron.kinetic_energy()
 
-    print time, T, electron.velocity[:], electron.currentPos[:],  electron.oldPos[:]
+    print time, T, electron.velocity[:], electron.currentPos[:], electron.forces
 
     if anim:            
         line.set_xdata(electron.currentPos[0])
