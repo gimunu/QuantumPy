@@ -40,7 +40,7 @@ F.write_info()
 
 anim = True
 
-e1 = qp.classical.PointParticle(sbox = sb, velocity = [0., 1.5], position = [2.0, 0.0], charge = -1.0)
+e1 = qp.classical.PointParticle(sbox = sb, velocity = [0., 2.5], position = [2.0, 0.0], charge = -1.0)
 e1.record_start()
 
 if anim:
@@ -58,12 +58,12 @@ if anim:
 dt = 0.1
 final_time = 50
 
-U =  qp.classical.Propagator(F, dt = dt, method = 'velverlet')
+U =  qp.classical.Propagator(F, dt = dt, method = 'verlet')
 U.write_info()
 
 U.initialize([electron])
 
-U1 =  qp.classical.Propagator(F, dt = dt, method = 'verlet')
+U1 =  qp.classical.Propagator(F, dt = dt, method = 'velverlet')
 U1.initialize([e1])
 
 for i in range(0, int(final_time/dt)):
@@ -72,7 +72,7 @@ for i in range(0, int(final_time/dt)):
     U1.apply([e1], time = time)
     T = electron.kinetic_energy()
 
-    # print time, T, electron.velocity[:], electron.currentPos[:], electron.forces
+    print time, T, electron.velocity[:], electron.currentPos[:], electron.forces
     if anim:            
         line.set_xdata(electron.currentPos[0])
         line.set_ydata(electron.currentPos[1])
