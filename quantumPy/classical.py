@@ -87,6 +87,7 @@ class Propagator(object):
         super(Propagator, self).__init__()
         self.forces   = forces
         self.dt       = kwds.get('dt', 0.1)
+        self.method    = kwds.get('method', 'verlet')
         self.time = 0.0    
         
     def verlet(self, particles):
@@ -99,8 +100,30 @@ class Propagator(object):
                 p.oldPos = temp
                 # Approximated 
                 p.velocity = (p.currentPos - p.oldPos)/self.dt 
+
+    def velverlet(self, particles):
+        # Velocity Verlet integration step:
+        for p in particles:
+            if not p.locked:
+                p.currentPos = p.currentPos + p.velocity*self.dt + 0.5*p.forces/p.mass * self.dt**2.
+                # v(t+dt/2)
+                p.velocity = p.velocity + 0.5*p.forces/p.mass * self.dt
+                # f(t+dt) 
+                # note that if f(t+dt) depends on v (like with damping) we are making an error
+                # since we at this step we only have access to v(t+dt/2)
+                self.accumulateForces(particle = p)
+                # v(t+dt)
+                p.velocity = p.velocity + 0.5*p.forces/p.mass * self.dt
+
     
     def accumulateForces(self, **kwds):
+        p = kwds.pop('particle', None)
+
+        p.forces = np.array([0.0]*p.dim)        
+        for F in self.forces:
+            p.forces += F.evaluate(p, **kwds)
+
+    def accumulateTotalForces(self, **kwds):
         particles = kwds.get('particles', None)
 
         for p in particles:
@@ -114,14 +137,26 @@ class Propagator(object):
         self.dt   = kwds.get('dt'  , self.dt)
         self.time = kwds.get('time', self.time)
         
-        self.accumulateForces(particles = particles, time = self.time )
-        self.verlet(particles)
+        self.accumulateTotalForces(particles = particles, time = self.time )
+        
+        if   self.method == 'verlet':
+            self.verlet(particles)
+        elif self.method == 'velverlet':
+            self.velverlet(particles)
+        else:
+            raise Exception
+            
         # for i in range(ITERATE):
         #     self.satisfyConstraints()
 
     def initialize(self, particles):
         for p in particles:
             p.oldPos = p.currentPos - p.velocity *self.dt
+            
+    
+    def write_info(self, indent = 0):
+         print_msg( "Classical time propagator: ", indent = indent )          
+         print_msg( "method = %s"%(self.method), indent = indent+1 )          
         
 
 
