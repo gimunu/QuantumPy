@@ -85,6 +85,7 @@ class PointParticle(object):
         return np.dot(self.velocity, self.velocity)/(2.*self.mass)
 
 
+
 class Propagator(object):
     """Classical time propagator"""
     def __init__(self, forces, **kwds):
@@ -185,6 +186,7 @@ class Force(object):
         # self.expr    = BinaryTree(self)
 
         self.forcefield = None 
+        self.potential  = None
         
     def write_info(self, indent = 0): 
         print_msg( "%s force (%s): "%(self.name, self.symbol), indent = indent )       
@@ -192,23 +194,47 @@ class Force(object):
             print_msg( "%s = %s "%(self.symbol, self.formula), indent = indent+1)    
         if self.info:
             print_msg( "info: %s "%(self.info), indent = indent+1)    
-    
-    def evaluate(self, particle, **kwds):
+
+
+    def _evaluate_force(self, particle, **kwds):
         
         F = [0.0]*self.dim
-        
+    
         if getattr(self, 'forcefield'):
             forcefield = getattr(self, 'forcefield')
             F = forcefield(particle, **kwds)
-        # else:
-        #    pass 
-        #     # wfout = self._evaluate(self.expr, wfin, side, **kwds)
-        
+    
         return F  
+
+    def _evaluate_potential(self, particle, **kwds):
+        E = 0.0
+        
+        if getattr(self, 'potential'):
+            potential = getattr(self, 'potential')
+            E = potential(particle, **kwds)
+        
+        return E
+    
+    def evaluate(self, particle, **kwds):
+        
+        what = kwds.pop('quantity', 'force')
+        
+        if   what == 'force':        
+            return self._evaluate_force(particle, **kwds)
+            
+        elif what ==  'potential':
+            return self._evaluate_potential(particle, **kwds)
+            
+        else:
+            raise Exception            
+        
+        
 
     def set_forcefield(self, func):
         self.forcefield = func
                 
+    def set_potential(self, func):
+        self.potential = func
 
     def __iter__(self):
         if self:
@@ -243,14 +269,21 @@ def constant_force(sb, vec):
         vec = v 
     
     def forcefield(p, **kwds):
-        return vec[0:sb.dim] #if (p.shape[0] >= np.array(vec).shape[0])
+        return vec[0:sb.dim] 
+
+    def potential(p, **kwds):
+        #the reference is in the center of the coordinates
+        return  - np.dot(vec[0:sb.dim], p.currentPos[0:sb.dim])
+
 
     F = Force(sb)
     F.name    = 'Constant'
     F.symbol  = 'F'
     F.formula = '%s'%(vec)
         
-    F.set_forcefield(forcefield)    
+    F.set_forcefield(forcefield)
+    F.set_potential(potential)  
+        
     return F
 
 
@@ -276,11 +309,16 @@ def harmonic_force(sb, point, k = 1.0, damping = 0.0):
         R = p.currentPos - point.currentPos
         return -k * R  - damping * p.velocity
 
+    def potential(p, **kwds):
+        R = p.currentPos - point.currentPos
+        return 0.5 * k * np.dot(R,R)
+
     F = Force(sb)
     F.name    = 'Spring'
     F.symbol  = 'Fs'
     F.formula = '-k * (r - R)\n C=%1.4e \n R=%s'%(k, point.currentPos)
         
-    F.set_forcefield(forcefield)    
+    F.set_forcefield(forcefield)
+    F.set_potential(potential)     
     return F
 

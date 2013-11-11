@@ -27,15 +27,15 @@ import quantumPy as qp
 dim = 2
 sb = qp.classical.SimulationBox(dim=dim, size = [10.0]*dim)
 
-electron = qp.classical.PointParticle(sbox = sb, velocity = [0., 1.5], position = [2.0, 0.0], charge = -1.0)
+electron = qp.classical.PointParticle(sbox = sb, velocity = [0., 0.0], position = [2.0, 0.0], charge = -1.0)
 
 print electron
 
-# F = qp.classical.constant_force(sb, [-0.5,-0.5])
 proton = qp.classical.PointParticle(sbox =sb , charge = 1.0, locked = True, position = [0.0]*dim )
 # F = qp.classical.electrostatic_force(sb, proton)
 F = qp.classical.harmonic_force(sb, proton, damping = 0.0)
 # F = qp.classical.Force(sb)
+# F = qp.classical.constant_force(sb, [-0.5,0.0])
 F.write_info()
 
 anim = True
@@ -58,12 +58,12 @@ if anim:
 dt = 0.1
 final_time = 50
 
-U =  qp.classical.Propagator(F, dt = dt, method = 'verlet')
+U =  qp.classical.Propagator(F, dt = dt, method = 'velverlet')
 U.write_info()
 
 U.initialize([electron])
 
-U1 =  qp.classical.Propagator(F, dt = dt, method = 'velverlet')
+U1 =  qp.classical.Propagator(F, dt = dt, method = 'verlet')
 U1.initialize([e1])
 
 for i in range(0, int(final_time/dt)):
@@ -71,8 +71,9 @@ for i in range(0, int(final_time/dt)):
     U.apply([electron], time = time)
     U1.apply([e1], time = time)
     T = electron.kinetic_energy()
-
-    print time, T, electron.velocity[:], electron.currentPos[:], electron.forces
+    V = F.evaluate(electron, quantity = 'potential')
+    E = T+V
+    print "%d\t %s\t %f\t %f\t %f"%(i, time, E, T , V) 
     if anim:            
         line.set_xdata(electron.currentPos[0])
         line.set_ydata(electron.currentPos[1])
