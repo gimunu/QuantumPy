@@ -322,3 +322,16 @@ def harmonic_force(sb, point, k = 1.0, damping = 0.0):
     F.set_potential(potential)     
     return F
 
+def dissipative_force(sb, point, c = 1.0):
+
+    def forcefield(p, **kwds):
+        return  - c * p.velocity
+
+    F = Force(sb)
+    F.name    = 'Dissipative'
+    F.symbol  = 'D'
+    F.formula = '-c * v\n c=%1.4e'%(c)
+        
+    F.set_forcefield(forcefield)
+    return F
+
