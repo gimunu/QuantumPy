@@ -33,8 +33,8 @@ class SimulationBox(object):
     def __init__(self, **kwds):
         super(SimulationBox, self).__init__()
         self.dim = kwds.get('dim', 1)
-        self.size   = np.array([1.0]*self.dim)
-        self.center = np.array([0.0]*self.dim)
+        self.size   = np.array(kwds.get('size',   [1.0]*self.dim))
+        self.center = np.array(kwds.get('center', [0.0]*self.dim))
         
     def write_info():
         pass
@@ -54,11 +54,11 @@ class PointParticle(object):
         self.charge = kwds.get('charge', 1.0)
 
         # Physical variables 
-        self.currentPos = np.array(kwds.get('position', [0]*self.dim))
+        self.currentPos = np.array(kwds.get('position', [0.0]*self.dim))
         self.oldPos = self.currentPos.copy()
 
-        self.velocity = np.array(kwds.get('velocity', [0]*self.dim))
-        self.forces   = np.array(kwds.get('forces', [0]*self.dim))
+        self.velocity = np.array(kwds.get('velocity', [0.0]*self.dim))
+        self.forces   = np.array(kwds.get('forces', [0.0]*self.dim))
         
         # Should the particle be locked at its current position?
         self.locked = np.array(kwds.get('locked', False))
@@ -104,7 +104,7 @@ class Propagator(object):
         particles = kwds.get('particles', None)
 
         for p in particles:
-            p.forces = np.array([0]*p.dim)
+            p.forces = np.array([0.0]*p.dim)
         
         for p in particles:
             for F in self.forces:
@@ -144,7 +144,7 @@ class Force(object):
         self.forces  = [self]
         # self.expr    = BinaryTree(self)
 
-        self.forceField = None 
+        self.forcefield = None 
         
     def write_info(self, indent = 0): 
         print_msg( "%s force (%s): "%(self.name, self.symbol), indent = indent )       
@@ -155,19 +155,55 @@ class Force(object):
     
     def evaluate(self, particle, **kwds):
         
-        F = [0]*self.dim
+        F = [0.0]*self.dim
         
-        if getattr(self, 'forceField'):
-            forceField = getattr(self, forceField)
-            F = forceField(particle.currentPos[:], **kwds)
-        else:
-           pass 
-            # wfout = self._evaluate(self.expr, wfin, side, **kwds)
+        if getattr(self, 'forcefield'):
+            forcefield = getattr(self, 'forcefield')
+            F = forcefield(particle.currentPos[:], **kwds)
+        # else:
+        #    pass 
+        #     # wfout = self._evaluate(self.expr, wfin, side, **kwds)
         
         return F  
+
+    def set_forcefield(self, func):
+        self.forcefield = func
+                
 
     def __iter__(self):
         if self:
             for elem in self.forces:
                 yield elem
-                      
+
+
+#############################################
+#  Library of Forces
+#############################################
+
+def null_force(sb, vec):
+
+    def forcefield(p, **kwds):
+        return [0.0]*sb.dim
+
+    F = Force(sb)
+    F.name    = 'Constant'
+    F.symbol  = 'F'
+    F.formula = '0'
+        
+    F.set_forcefield(forcefield)    
+    return F
+
+
+def constant_force(sb, vec):
+    
+    def forcefield(p, **kwds):
+        return vec[0:sb.dim] #if (p.shape[0] >= np.array(vec).shape[0])
+
+    F = Force(sb)
+    F.name    = 'Constant'
+    F.symbol  = 'F'
+    F.formula = '%s'%(vec)
+        
+    F.set_forcefield(forcefield)    
+    return F
+
