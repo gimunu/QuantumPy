@@ -43,25 +43,35 @@ anim = True
 e1 = qp.classical.PointParticle(sbox = sb, velocity = [0., 2.5], position = [2.0, 0.0], charge = -1.0)
 e1.record_start()
 
+# Force an electron to move on a circle centered in ec
+ec = qp.classical.PointParticle(sbox = sb, locked = True, position = [1.0, 0.0])
+e  = qp.classical.PointParticle(sbox = sb, velocity = [0., 3.5], position = [3.0, 0.0], charge = -1.0)
+e.record_start()
+C = qp.classical.Constraint(ec, e)
+ring = qp.classical.ParticleSystem([ec, e], constraints = C)
+
 if anim:
     pl.ion()
-    line, = pl.plot(electron.currentPos[0], electron.currentPos[1], 'bo', label='e')
-    line1,  = pl.plot(e1.currentPos[0], e1.currentPos[1], 'go', label='e1')
+    line, = pl.plot(electron.pos[0], electron.pos[1], 'bo', label='e')
+    line1,  = pl.plot(e1.pos[0], e1.pos[1], 'go', label='e1')
     line1_, = pl.plot(e1.trajectory[0,0], e1.trajectory[0,1],  label='t1')
-    pl.plot(proton.currentPos[0], proton.currentPos[1], 'ro', label='p')
-    line.axes.set_xlim(-10,10)
+    line2,  = pl.plot(e.pos[0], e.pos[1], 'go', label='ring')
+    line2_, = pl.plot(e.trajectory[0,0], e.trajectory[0,1],  label='t2')
+    pl.plot(proton.pos[0], proton.pos[1], 'ro', label='p')
+    line.axes.set_xlim(-5,5)
     line.axes.set_ylim(-5,5)
          
     pl.legend( loc='upper left')
     pl.draw()
 
-dt = 0.1
+dt = 0.05
 final_time = 50
 
 U =  qp.classical.Propagator(F, dt = dt, method = 'velverlet')
 U.write_info()
 
 U.initialize([electron])
+U.initialize(ring)
 
 U1 =  qp.classical.Propagator(F, dt = dt, method = 'verlet')
 U1.initialize([e1])
@@ -69,16 +79,21 @@ U1.initialize([e1])
 for i in range(0, int(final_time/dt)):
     time = i*dt
     U.apply([electron], time = time)
+    U.apply(ring, time = time)
     U1.apply([e1], time = time)
     T = electron.kinetic_energy()
     V = F.evaluate(electron, quantity = 'potential')
     E = T+V
     print "%d\t %s\t %f\t %f\t %f"%(i, time, E, T , V) 
     if anim:            
-        line.set_xdata(electron.currentPos[0])
-        line.set_ydata(electron.currentPos[1])
-        line1.set_xdata(e1.currentPos[0])
-        line1.set_ydata(e1.currentPos[1])
+        line.set_xdata(electron.pos[0])
+        line.set_ydata(electron.pos[1])
+        line1.set_xdata(e1.pos[0])
+        line1.set_ydata(e1.pos[1])
         line1_.set_xdata(e1.trajectory[:,0])
         line1_.set_ydata(e1.trajectory[:,1])
+        line2.set_xdata(e.pos[0])
+        line2.set_ydata(e.pos[1])
+        line2_.set_xdata(e.trajectory[:,0])
+        line2_.set_ydata(e.trajectory[:,1])
         pl.draw()
