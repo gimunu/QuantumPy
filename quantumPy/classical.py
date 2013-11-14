@@ -24,6 +24,7 @@ __all__ = ['PointParticle', 'Propagator', 'Force']
 
 import numpy as np
 import copy
+import collections
 from .base import *
 from .grid import *
 
@@ -54,8 +55,8 @@ class PointParticle(object):
         self.charge = kwds.get('charge', 1.0)
 
         # Physical variables 
-        self.currentPos = np.array(kwds.get('position', [0.0]*self.dim))
-        self.oldPos = self.currentPos.copy()
+        self.pos = np.array(kwds.get('position', [0.0]*self.dim))
+        self.oldPos = self.pos.copy()
 
         self.velocity = np.array(kwds.get('velocity', [0.0]*self.dim))
         self.forces   = np.array(kwds.get('forces', [0.0]*self.dim))
@@ -69,14 +70,14 @@ class PointParticle(object):
         
 
     def __str__(self):
-        return "Particle <M=%s, Q=%s; pos=%s, vel=%s>"%(self.mass, self.charge, self.currentPos, self.velocity)
+        return "Particle <M=%s, Q=%s; pos=%s, vel=%s>"%(self.mass, self.charge, self.pos, self.velocity)
 
     def record(self):
-        self.trajectory=np.append(self.trajectory, [self.currentPos], axis = 0)
+        self.trajectory=np.append(self.trajectory, [self.pos], axis = 0)
 
     def record_start(self):
         self.rec = True
-        self.trajectory=np.array([self.currentPos])
+        self.trajectory=np.array([self.pos])
 
     def record_stop(self):
         self.rec = False
@@ -84,6 +85,51 @@ class PointParticle(object):
     def kinetic_energy(self):
         return np.dot(self.velocity, self.velocity)/(2.*self.mass)
 
+
+class ParticleSystem(object):
+    """ParticleSystem class"""
+    def __init__(self, particles, **kwds):
+        super(ParticleSystem, self).__init__()
+        particles = particles if isinstance(particles, collections.Iterable) else [particles] 
+        self.particles = np.array(particles)
+        constraints = kwds.get('constraints', [])
+        constraints = constraints if isinstance(constraints, collections.Iterable) else [constraints]
+        self.constraints = np.array(constraints)
+        
+    def add_particle(self, particles):
+        self.particles = np.append(self.particles, particles)
+        
+    def add_constraint(self, constraint):
+        self.constraints = np.append(self.constraints, constraint)
+        
+    def center_of(self, quantity = 'mass'):
+        tot = 0.0
+        res = [0.0]*particles[0].sb.dim
+        for p in particles:
+            val = p.mass
+            tot += val
+            res += val * p.pos     
+
+        return res/tot
+            
+
+    def __iter__(self):
+        if self:
+            for p in self.particles:
+                yield p
+
+
+
+class Constraint(object):
+    """Constraint class implementing constraint in particle system"""
+    def __init__(self, p1, p2, type = 'rigid'):
+        super(Constraint, self).__init__()
+        self.particles = [p1, p2]
+        self.length = np.sqrt(np.dot(p1.pos-p2.pos,p1.pos-p2.pos))
+        
+
+
+        
 
 
 class Propagator(object):
@@ -100,18 +146,18 @@ class Propagator(object):
         for p in particles:
             if not p.locked:
                 # make a copy of our current position
-                temp = p.currentPos.copy()
-                p.currentPos = 2.*p.currentPos - p.oldPos + p.forces/p.mass * self.dt**2.
+                temp = p.pos.copy()
+                p.pos = 2.*p.pos - p.oldPos + p.forces/p.mass * self.dt**2.
                 p.oldPos = temp
                 # Approximated 
-                p.velocity = (p.currentPos - p.oldPos)/self.dt 
+                p.velocity = (p.pos - p.oldPos)/self.dt 
 
     def velverlet(self, particles):
         # Velocity Verlet integration step:
         for p in particles:
             if not p.locked:
                 # r(t+dt)
-                p.currentPos = p.currentPos + p.velocity*self.dt + 0.5*p.forces/p.mass * self.dt**2.
+                p.pos = p.pos + p.velocity*self.dt + 0.5*p.forces/p.mass * self.dt**2.
                 # v(t+dt/2)
                 p.velocity = p.velocity + 0.5*p.forces/p.mass * self.dt
                 # f(t+dt) 
@@ -148,16 +194,34 @@ class Propagator(object):
         else:
             raise Exception
         
+        if hasattr(particles, 'constraints'):    
+            for i in range(5):
+                self.satisfyConstraints(particles.constraints)
+
         for p in particles:
             if p.rec:
                 p.record()    
-            
-        # for i in range(ITERATE):
-        #     self.satisfyConstraints()
+
+    def satisfyConstraints(self, constraints):
+        # Keep particles together:
+        for c in constraints:
+            delta =  c.particles[0].pos - c.particles[1].pos
+            deltaLength = np.sqrt(np.dot(delta,delta))
+            try:
+                # You can get a ZeroDivisionError here once, so let's catch it.
+                # I think it's when particles sit on top of one another due to
+                # being locked.
+                diff = (deltaLength-c.length)/deltaLength
+                if not c.particles[0].locked:
+                    c.particles[0].pos -= delta*0.5*diff
+                if not c.particles[1].locked:
+                    c.particles[1].pos += delta*0.5*diff
+            except ZeroDivisionError:
+                pass
 
     def initialize(self, particles):
         for p in particles:
-            p.oldPos = p.currentPos - p.velocity *self.dt
+            p.oldPos = p.pos - p.velocity *self.dt
             
     
     def write_info(self, indent = 0):
@@ -273,7 +337,7 @@ def constant_force(sb, vec):
 
     def potential(p, **kwds):
         #the reference is in the center of the coordinates
-        return  - np.dot(vec[0:sb.dim], p.currentPos[0:sb.dim])
+        return  - np.dot(vec[0:sb.dim], p.pos[0:sb.dim])
 
 
     F = Force(sb)
@@ -290,14 +354,14 @@ def constant_force(sb, vec):
 def electrostatic_force(sb, point, const = 1.0):
 
     def forcefield(p, **kwds):
-        R = p.currentPos - point.currentPos
+        R = p.pos - point.pos
         nR = np.dot(R,R)
         return const * point.charge *p.charge * R /nR**(3./2.)  
 
     F = Force(sb)
     F.name    = 'Electrostatic'
     F.symbol  = 'E'
-    F.formula = 'C * Q * q r/||R-r||^2 \n C=%1.4e \n Q=%s \n R=%s'%(const, point.charge, point.currentPos)
+    F.formula = 'C * Q * q r/||R-r||^2 \n C=%1.4e \n Q=%s \n R=%s'%(const, point.charge, point.pos)
         
     F.set_forcefield(forcefield)    
     return F
@@ -306,17 +370,17 @@ def electrostatic_force(sb, point, const = 1.0):
 def harmonic_force(sb, point, k = 1.0, damping = 0.0):
 
     def forcefield(p, **kwds):
-        R = p.currentPos - point.currentPos
+        R = p.pos - point.pos
         return -k * R  - damping * p.velocity
 
     def potential(p, **kwds):
-        R = p.currentPos - point.currentPos
+        R = p.pos - point.pos
         return 0.5 * k * np.dot(R,R)
 
     F = Force(sb)
     F.name    = 'Spring'
     F.symbol  = 'Fs'
-    F.formula = '-k * (r - R)\n C=%1.4e \n R=%s'%(k, point.currentPos)
+    F.formula = '-k * (r - R)\n C=%1.4e \n R=%s'%(k, point.pos)
         
     F.set_forcefield(forcefield)
     F.set_potential(potential)     
