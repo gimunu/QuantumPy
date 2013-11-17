@@ -184,15 +184,19 @@ class ExternalField(object):
         super(ExternalField, self).__init__()
         
         self.type = kwds.get('type','electric_field')
+        self.sb = sb
         pol = [0.0]*sb.dim
         pol[0] = 1.0    
-        self.pol      = kwds.get('polarization', pol)  
+        self.pol      = kwds.get('polarization', pol) 
+        #normalize
+        self.pol =self.pol/np.sqrt(self.pol, self.pol)
         self.omega    = kwds.get('omega', 1.0)
         self.envelope = kwds.get('envelope', tdf_constant(1.0))
         self.phase    = kwds.get('phase', tdf_constant(0.0))    
     
     def evaluate(self, time, **kwds):
-        return  self.pol[:] * self.envelope(time) np.sin(self.omega *time + self.phase(time)) 
+        ft = self.envelope(time) * np.sin(self.omega * time + self.phase(time)) 
+        return  [ ft*dir for dir in self.pol] 
         
         
 
