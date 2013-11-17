@@ -27,7 +27,7 @@ import copy
 import collections
 from .base import *
 from .grid import *
-
+from .td import ExternalField
 
 class SimulationBox(object):
     """docstring for SimulationBox"""
@@ -153,7 +153,7 @@ class Propagator(object):
                 # Approximated 
                 p.velocity = (p.pos - p.oldPos)/self.dt 
 
-    def velverlet(self, particles):
+    def velverlet(self, particles, **kwds):
         # Velocity Verlet integration step:
         for p in particles:
             if not p.locked:
@@ -164,7 +164,7 @@ class Propagator(object):
                 # f(t+dt) 
                 # note that if f(t+dt) depends on v (like with damping) we are making an error
                 # since we at this step we only have access to v(t+dt/2)
-                self.forces.accumulateForces(particle = p)
+                self.forces.accumulateForces(particle = p, **kwds)
                 # v(t+dt)
                 p.velocity = p.velocity + 0.5*p.forces/p.mass * self.dt
 
@@ -173,7 +173,7 @@ class Propagator(object):
         particles = kwds.get('particles', None)
         
         for p in particles:
-            self.forces.accumulateForces(particle = p)
+            self.forces.accumulateForces(particle = p, **kwds)
     
     def apply(self, particles, **kwds):
         self.dt   = kwds.get('dt'  , self.dt)
@@ -184,7 +184,7 @@ class Propagator(object):
         if   self.method == 'verlet':
             self.verlet(particles)
         elif self.method == 'velverlet':
-            self.velverlet(particles)
+            self.velverlet(particles, **kwds)
         else:
             raise Exception
         
@@ -291,9 +291,6 @@ class Force(object):
         p.forces = np.array([0.0]*p.dim)        
         for F in self.forces:
             p.forces += F.evaluate(p, **kwds)
-    
-        
-        
         
 
     def set_forcefield(self, func):
@@ -414,15 +411,15 @@ def td_external_field(sb, **kwds):
     
     externalfield = kwds.pop('externalfield', None)
     if not externalfield:
-        externalfield = td.ExternalField(sb, **kwds)
+        externalfield = ExternalField(sb, **kwds)
 
-    def forcefield(p, **kwds):
-        return  externalfield(pos = p.pos, charge = p.charge, **kwds)
+    def forcefield(p, time, **kwds):
+        return  externalfield.evaluate(pos = p.pos, charge = p.charge, time = time, **kwds)
 
     F = Force(sb)
     F.name    = 'Time-dependent'
     F.symbol  = 'F(t)'
-    F.formula = '-c * v\n c=%1.4e'%(c)
+    F.formula = 'F(t) cos(w t)'
         
     F.set_forcefield(forcefield)
     return F
