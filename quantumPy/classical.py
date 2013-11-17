@@ -140,6 +140,7 @@ class Propagator(object):
         self.dt       = kwds.get('dt', 0.1)
         self.method    = kwds.get('method', 'velverlet')
         self.time = 0.0    
+        self.constIter = kwds.get('constIter', 5)
         
     def verlet(self, particles):
         # Verlet integration step:
@@ -195,7 +196,7 @@ class Propagator(object):
             raise Exception
         
         if hasattr(particles, 'constraints'):    
-            for i in range(5):
+            for i in range(self.constIter):
                 self.satisfyConstraints(particles.constraints)
 
         for p in particles:
