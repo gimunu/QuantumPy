@@ -32,20 +32,28 @@ electron = qp.classical.PointParticle(sbox = sb, velocity = [0., 0.0], position 
 print electron
 
 proton = qp.classical.PointParticle(sbox =sb , charge = 1.0, locked = True, position = [0.0]*dim )
-# F = qp.classical.electrostatic_force(sb, proton)
-F = qp.classical.harmonic_force(sb, proton, damping = 0.0)
+F = qp.classical.electrostatic_force(sb, proton, softcore = True)
+# F = qp.classical.harmonic_force(sb, proton, damping = 0.0)
 # F = qp.classical.Force(sb)
 # F = qp.classical.constant_force(sb, [-0.5,0.0])
 F.write_info()
 
+tconst = 20. 
+tramp = 10. 
+tau = (tconst + 2.*tramp)/2.
+A = 0.1
+envelope = qp.td.tdf_trapezoidal( A, tconst, tramp, tau)
+E = qp.classical.td_external_field(sb, omega = 10, envelope = envelope)
+
+F.forces = [F, E]
 anim = True
 
 e1 = qp.classical.PointParticle(sbox = sb, velocity = [0., 2.5], position = [2.0, 0.0], charge = -1.0)
 e1.record_start()
 
 # Force an electron to move on a circle centered in ec
-ec = qp.classical.PointParticle(sbox = sb, locked = True, position = [1.0, 0.0])
-e  = qp.classical.PointParticle(sbox = sb, velocity = [0., 3.5], position = [3.0, 0.0], charge = -1.0)
+ec = qp.classical.PointParticle(sbox = sb, locked = True, position = [1.0, 1.0])
+e  = qp.classical.PointParticle(sbox = sb, velocity = [0., 2.5], position = [3.0, 0.0], charge = -1.0)
 e.record_start()
 C = qp.classical.Constraint(ec, e)
 ring = qp.classical.ParticleSystem([ec, e], constraints = C)
@@ -84,7 +92,8 @@ for i in range(0, int(final_time/dt)):
     T = electron.kinetic_energy()
     V = F.evaluate(electron, quantity = 'potential')
     E = T+V
-    print "%d\t %s\t %f\t %f\t %f"%(i, time, E, T , V) 
+    R = ring.particles[1].pos -ring.particles[0].pos
+    print "%d\t %s\t %f\t %f\t %f -- %f"%(i, time, E, T , V, np.dot(R,R)) 
     if anim:            
         line.set_xdata(electron.pos[0])
         line.set_ydata(electron.pos[1])
