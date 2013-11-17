@@ -187,17 +187,25 @@ class ExternalField(object):
         self.sb = sb
         pol = [0.0]*sb.dim
         pol[0] = 1.0    
-        self.pol      = kwds.get('polarization', pol) 
+        self.pol      = np.array(kwds.get('polarization', pol)) 
         #normalize
-        self.pol =self.pol/np.sqrt(self.pol, self.pol)
+        self.pol      = self.pol/np.sqrt(np.dot(self.pol, self.pol))
         self.omega    = kwds.get('omega', 1.0)
         self.envelope = kwds.get('envelope', tdf_constant(1.0))
         self.phase    = kwds.get('phase', tdf_constant(0.0))    
-    
-    def evaluate(self, time, **kwds):
-        ft = self.envelope(time) * np.sin(self.omega * time + self.phase(time)) 
-        return  [ ft*dir for dir in self.pol] 
+        # The time grid
+        self.times    = kwds.get('times', None)
+        if self.times:
+            pass
+            
+    def _time_func(self, time):
+        return self.envelope(time) * np.sin(self.omega * time + self.phase(time)) 
         
+    def evaluate(self, time, **kwds):
+        return  self.pol * self._time_func(time)
+    
+    def  write_info(self, indent = 0):
+        pass    
         
 
 def tdf_constant(const):
