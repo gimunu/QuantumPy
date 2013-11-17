@@ -164,23 +164,16 @@ class Propagator(object):
                 # f(t+dt) 
                 # note that if f(t+dt) depends on v (like with damping) we are making an error
                 # since we at this step we only have access to v(t+dt/2)
-                self.accumulateForces(particle = p)
+                self.forces.accumulateForces(particle = p)
                 # v(t+dt)
                 p.velocity = p.velocity + 0.5*p.forces/p.mass * self.dt
 
-    
-    def accumulateForces(self, **kwds):
-        p = kwds.pop('particle', None)
-
-        p.forces = np.array([0.0]*p.dim)        
-        for F in self.forces:
-            p.forces += F.evaluate(p, **kwds)
 
     def accumulateTotalForces(self, **kwds):
         particles = kwds.get('particles', None)
         
         for p in particles:
-            self.accumulateForces(particle = p)
+            self.forces.accumulateForces(particle = p)
     
     def apply(self, particles, **kwds):
         self.dt   = kwds.get('dt'  , self.dt)
@@ -292,6 +285,14 @@ class Force(object):
             
         else:
             raise Exception            
+        
+    def accumulateForces(self, particle, **kwds):
+        p = particle
+        p.forces = np.array([0.0]*p.dim)        
+        for F in self.forces:
+            p.forces += F.evaluate(p, **kwds)
+    
+        
         
         
 
@@ -408,6 +409,20 @@ def dissipative_force(sb, c = 1.0):
     F.set_forcefield(forcefield)
     return F
 
-def td_external_field(sb, ):
-    """docstring for td_external_field"""
-    pass
+def td_external_field(sb, **kwds):
+    """Time-depended external forcefield."""
+    
+    externalfield = kwds.pop('externalfield', None)
+    if not externalfield:
+        externalfield = td.ExternalField(sb, **kwds)
+
+    def forcefield(p, **kwds):
+        return  externalfield(pos = p.pos, charge = p.charge, **kwds)
+
+    F = Force(sb)
+    F.name    = 'Time-dependent'
+    F.symbol  = 'F(t)'
+    F.formula = '-c * v\n c=%1.4e'%(c)
+        
+    F.set_forcefield(forcefield)
+    return F
