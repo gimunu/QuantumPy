@@ -419,7 +419,7 @@ def td_external_field(sb, **kwds):
     F = Force(sb)
     F.name    = 'Time-dependent'
     F.symbol  = 'F(t)'
-    F.formula = 'F(t) cos(w t)'
+    F.formula = 'A(t) * sin(w t + d(t))'
         
     F.set_forcefield(forcefield)
     return F
