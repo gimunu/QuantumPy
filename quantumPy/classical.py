@@ -352,17 +352,25 @@ def constant_force(sb, vec):
     return F
 
 
-def electrostatic_force(sb, point, const = 1.0):
+def electrostatic_force(sb, point, const = 1.0, softcore = False, softcoreA = 0.5):
 
+
+    F = Force(sb)
+    F.symbol  = 'E'
+    F.name    = 'Electrostatic'
+    F.formula = 'C * Q * q (r-R)/||r-R||^3 \n C=%1.4e \n Q=%s \n R=%s'%(const, point.charge, point.pos)
     def forcefield(p, **kwds):
         R = p.pos - point.pos
         nR = np.dot(R,R)
         return const * point.charge *p.charge * R /nR**(3./2.)  
 
-    F = Force(sb)
-    F.name    = 'Electrostatic'
-    F.symbol  = 'E'
-    F.formula = 'C * Q * q r/||R-r||^2 \n C=%1.4e \n Q=%s \n R=%s'%(const, point.charge, point.pos)
+    if softcore :
+        F.formula = 'C * Q * q r (r-R)/(||r-R||^2 + A)^(3/2) \n C=%1.4e \n Q=%s \n R=%s'%(const, point.charge, point.pos)
+        def forcefield(p, **kwds):
+            R = p.pos - point.pos
+            nR = np.dot(R,R)
+            return const * point.charge *p.charge * R /(nR + softcoreA)**(3./2.)  
+        
         
     F.set_forcefield(forcefield)    
     return F
@@ -387,7 +395,7 @@ def harmonic_force(sb, point, k = 1.0, damping = 0.0):
     F.set_potential(potential)     
     return F
 
-def dissipative_force(sb, point, c = 1.0):
+def dissipative_force(sb, c = 1.0):
 
     def forcefield(p, **kwds):
         return  - c * p.velocity
@@ -400,3 +408,6 @@ def dissipative_force(sb, point, c = 1.0):
     F.set_forcefield(forcefield)
     return F
 
+def td_external_field(sb, ):
+    """docstring for td_external_field"""
+    pass
