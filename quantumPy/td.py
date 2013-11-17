@@ -170,3 +170,45 @@ def td_etrs(H, order = 4, dt = 0.01):
     U.info    = '%s = %s'%(H.symbol, H.formula)
     
     return U   
+    
+#------------------------------------------
+# LASERS
+#------------------------------------------
+
+class ExternalField(object):
+    """ExternalField class.
+    
+    Describes electro-magnetic external perturbations.
+    """
+    def __init__(self, sb, **kwds):
+        super(ExternalField, self).__init__()
+        
+        self.type = kwds.get('type','electric_field')
+        pol = [0.0]*sb.dim
+        pol[0] = 1.0    
+        self.pol      = kwds.get('polarization', pol)  
+        self.omega    = kwds.get('omega', 1.0)
+        self.envelope = kwds.get('envelope', tdf_constant(1.0))
+        self.phase    = kwds.get('phase', tdf_constant(0.0))    
+    
+    def evaluate(self, time, **kwds):
+        return  self.pol[:] * self.envelope(time) np.sin(self.omega *time + self.phase(time)) 
+        
+        
+
+def tdf_constant(const):
+    def tdf(time, **kwds):
+        return const
+    return tdf    
+    
+def tdf_trapezoidal(amplitude, tconst, tramp, tau):
+
+    def tdf(time, **kwds):
+        if   np.abs(time-tau) <= tconst:
+            return amplitude
+        elif np.abs(time-tau) <= tconst+tramp:
+            return  (amplitude/tramp) * time + tconst  
+        else:
+            return 0.0    
+                  
+    return tdf        
