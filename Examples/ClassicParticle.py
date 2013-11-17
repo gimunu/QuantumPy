@@ -38,14 +38,20 @@ F = qp.classical.electrostatic_force(sb, proton, softcore = True)
 # F = qp.classical.constant_force(sb, [-0.5,0.0])
 F.write_info()
 
-tconst = 20. 
-tramp = 10. 
+omega = 1
+tc = 2.*np.pi/omega
+nconst = 28
+nup = 2
+tconst = nconst * tc 
+tramp = nup * tc
 tau = (tconst + 2.*tramp)/2.
-A = 0.1
+A = 1
 envelope = qp.td.tdf_trapezoidal( A, tconst, tramp, tau)
-E = qp.classical.td_external_field(sb, omega = 10, envelope = envelope)
+E = qp.classical.td_external_field(sb, omega = omega, envelope = envelope)
 
-F.forces = [F, E]
+# F.forces = [F, E]
+F = E
+
 anim = True
 
 e1 = qp.classical.PointParticle(sbox = sb, velocity = [0., 2.5], position = [2.0, 0.0], charge = -1.0)
