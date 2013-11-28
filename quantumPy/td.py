@@ -212,9 +212,46 @@ class ExternalField(object):
             self.field[i,:] = self.evaluate(t, **kwds)
             i += 1
             
-    def  write_info(self, indent = 0):
-        pass    
+    def  write_info(self, indent = 0, **kwds):
+        print_msg( "Laser: ", indent = indent ) 
+        print_msg( "Polarization =  %s"%(self.pol), indent + 1)
+        print_msg( "Carrier - w  = %1.4e [a.u]"%(self.omega), indent + 1)
+        print_msg( "          l  = %1.4e [nm]"%(1240./(self.omega*27.211)), indent + 1)
+        print_msg( " ", indent + 1)
+        self.envelope.write_info(indent + 1)
+        print_msg( " ", indent + 1)
+        # optionally ask for a time-grid 
+        times = kwds.pop('times', None)
+        if times:
+            self.grid_evaluate(times, **kwds)
 
+        # 1 atomic unit of intensity = 6.4364086e+15 W / cm^2
+        # In a Gaussian system of units,
+        # I(t) = (1/(8\pi)) * c * E(t)^2
+        # (1/(8\pi)) * c = 5.4525289841210 a.u.
+        if self.field != None:
+            max_intensity = 0
+            max_field = 0
+            fluence = 0
+            for f in self.field:
+                field = np.dot(f,f)
+                intensity =  field * 5.4525289841210
+                fluence = fluence + intensity    
+                if(intensity > max_intensity): 
+                    max_intensity = intensity 
+                if(field > max_field):
+                     max_field = field         
+            fluence *= np.abs(self.time[1]-self.time[0])    
+            Up = max_field/(4*self.omega**2)
+            
+            print_msg( "Peak intensity  = %1.4e [a.u]"%(max_intensity), indent + 1)
+            print_msg( "                = %1.4e [W/cm^2]"%(max_intensity*6.4364086e+15), indent + 1)
+            print_msg( "Int. intensity  = %1.4e [a.u]"%(fluence), indent + 1)
+            print_msg( "Fluence         = %1.4e [a.u]"%(fluence/5.4525289841210), indent + 1)
+            print_msg( "Ponderomotive E = %1.4e [a.u]"%(Up), indent + 1)
+            
+            
+                
 class TDfunction(object):
     """docstring for TDfunction"""
     def __init__(self, **kwds):
@@ -259,9 +296,9 @@ def tdf_trapezoidal(amplitude, tconst, tramp, tau):
     tdf = TDfunction()
     tdf.func = func     
     tdf.name = "Trapezoidal"     
-    tdf.info = "amplitude  = %1.5e  \
-    tconst     = %1.5e \
-    tramp      = %1.5e "% (amplitude, tconst, tramp) 
+    tdf.info = "amplitude  = %1.5e [a.u]\n\
+tconst     = %1.5e [a.u]\n\
+tramp      = %1.5e [a.u]"% (amplitude, tconst, tramp) 
 
                   
     return tdf        
