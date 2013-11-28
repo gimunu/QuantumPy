@@ -128,8 +128,8 @@ p2.plot(times, velocity[:,1],  label='vy')
 p2.legend( loc='lower left')
 
 p3 = fig2.add_subplot(4, 1, 3, title = "acceleration")
-p3.plot(times, acc[:,0],  label='Ex')
-p3.plot(times, acc[:,1],  label='Ey')
+p3.plot(times, acc[:,0],  label='ax')
+p3.plot(times, acc[:,1],  label='ay')
 p3.legend( loc='lower left')
 
 p4 = fig2.add_subplot(4, 1, 4, title = "Laser")
