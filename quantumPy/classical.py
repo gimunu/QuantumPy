@@ -162,8 +162,8 @@ class Propagator(object):
                 # v(t+dt/2)
                 p.velocity = p.velocity + 0.5*p.forces/p.mass * self.dt
                 # f(t+dt) 
-                # note that if f(t+dt) depends on v (like with damping) we are making an error
-                # since we at this step we only have access to v(t+dt/2)
+                # note that if f(t+dt) depends on v (like with damping) we are committing an error
+                # since at this step we only have access to v(t+dt/2)
                 self.forces.accumulateForces(particle = p, **kwds)
                 # v(t+dt)
                 p.velocity = p.velocity + 0.5*p.forces/p.mass * self.dt
