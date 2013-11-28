@@ -38,19 +38,23 @@ F = qp.classical.electrostatic_force(sb, proton, softcore = True)
 # F = qp.classical.constant_force(sb, [-0.5,0.0])
 F.write_info()
 
-omega = 1
+# omega = 0.0231436294182
+omega = 5
 tc = 2.*np.pi/omega
 nconst = 28
-nup = 2
+nup = 10
+ntot = nconst + 2*nup
 tconst = nconst * tc 
 tramp = nup * tc
 tau = (tconst + 2.*tramp)/2.
 A = 1
 envelope = qp.td.tdf_trapezoidal( A, tconst, tramp, tau)
-E = qp.classical.td_external_field(sb, omega = omega, envelope = envelope)
+laser = qp.td.ExternalField(sb, omega = omega, envelope = envelope, polarization = [0,1])
+E = qp.classical.td_external_field(sb, externalfield = laser)
+# E = qp.classical.td_external_field(sb, omega = omega, envelope = envelope, polarization = [0,1])
 
-# F.forces = [F, E]
-F = E
+F.forces = [F, E]
+# F = E
 
 anim = True
 
@@ -79,7 +83,15 @@ if anim:
     pl.draw()
 
 dt = 0.05
-final_time = 50
+final_time = tc*ntot
+
+times = np.linspace(0.0, final_time, num = int(final_time/dt), endpoint=False)
+# laser.grid_evaluate(times)
+laser.write_info(times = times)
+# pl.plot(laser.time, laser.field,  label='laser')
+# pl.plot(laser.time, [envelope.evaluate(t) for t in times],  label='envelope')
+# pl.show()  
+# exit()
 
 U =  qp.classical.Propagator(F, dt = dt, method = 'velverlet')
 U.write_info()
