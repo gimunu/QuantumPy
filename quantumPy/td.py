@@ -212,7 +212,8 @@ class ExternalField(object):
             self.field[i,:] = self.evaluate(t, **kwds)
             i += 1
             
-    def  write_info(self, indent = 0, **kwds):
+    def  write_info(self,  **kwds):
+        indent = kwds.get('indent', 0)
         print_msg( "Laser: ", indent = indent ) 
         print_msg( "Polarization =  %s"%(self.pol), indent + 1)
         print_msg( "Carrier - w  = %1.4e [a.u]"%(self.omega), indent + 1)
@@ -222,7 +223,7 @@ class ExternalField(object):
         print_msg( " ", indent + 1)
         # optionally ask for a time-grid 
         times = kwds.pop('times', None)
-        if times:
+        if times != None:
             self.grid_evaluate(times, **kwds)
 
         # 1 atomic unit of intensity = 6.4364086e+15 W / cm^2
