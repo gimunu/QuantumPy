@@ -193,34 +193,71 @@ class ExternalField(object):
         self.omega    = kwds.get('omega', 1.0)
         self.envelope = kwds.get('envelope', tdf_constant(1.0))
         self.phase    = kwds.get('phase', tdf_constant(0.0))    
-        # The time grid
-        self.times    = kwds.get('times', None)
-        if self.times:
-            pass
+        # Grid values
+        self.field    = None
+        self.times    = None
             
-    def _time_func(self, time):
-        return self.envelope(time) * np.sin(self.omega * time + self.phase(time)) 
+    def _time_func(self, time, **kwds):
+        return self.envelope.evaluate(time, **kwds) * \
+                np.sin(self.omega * time + self.phase.evaluate(time, **kwds)) 
         
     def evaluate(self, time, **kwds):
-        return  self.pol * self._time_func(time)
-    
+        return  self.pol * self._time_func(time, **kwds)
+
+    def grid_evaluate(self, times, **kwds):
+        self.time  = np.array(times)
+        self.field = np.zeros((self.time.size, self.pol.size)) 
+        i=0
+        for t in self.time:
+            self.field[i,:] = self.evaluate(t, **kwds)
+            i += 1
+            
     def  write_info(self, indent = 0):
         pass    
+
+class TDfunction(object):
+    """docstring for TDfunction"""
+    def __init__(self, **kwds):
+        super(TDfunction, self).__init__()
+        self.func = kwds.get('function',None)
+        self.name = kwds.get('name',None)
+        self.info = kwds.get('info',None)
         
+    def evaluate(self, time, **kwds):
+        return self.func(time, **kwds)
+    
+    def write_info(self, indent = 0):
+        print_msg( "%s: "%(self.name), indent = indent ) 
+        print_msg( "%s"%(self.info), indent = indent+1 )                         
+
 
 def tdf_constant(const):
-    def tdf(time, **kwds):
+    def func(time, **kwds):
         return const
+    
+    tdf = TDfunction()
+    tdf.func = func     
+    tdf.name = "Constant"     
+    tdf.info = "amplitude = %1.5e "% const     
+        
     return tdf    
     
 def tdf_trapezoidal(amplitude, tconst, tramp, tau):
 
-    def tdf(time, **kwds):
+    def func(time, **kwds):
         if   np.abs(time-tau) <= tconst:
             return amplitude
         elif np.abs(time-tau) <= tconst+tramp:
             return  (amplitude/tramp) * time + tconst  
         else:
             return 0.0    
+
+    tdf = TDfunction()
+    tdf.func = func     
+    tdf.name = "Trapezoidal"     
+    tdf.info = "amplitude  = %1.5e  \
+    tconst     = %1.5e \
+    tramp      = %1.5e "% (amplitude, tconst, tramp) 
+
                   
     return tdf        
