@@ -245,12 +245,16 @@ def tdf_constant(const):
 def tdf_trapezoidal(amplitude, tconst, tramp, tau):
 
     def func(time, **kwds):
-        if   np.abs(time-tau) <= tconst:
-            return amplitude
-        elif np.abs(time-tau) <= tconst+tramp:
-            return  (amplitude/tramp) * time + tconst  
+        f = 0
+        if   time > tau - tconst/2. - tramp and time <= tau - tconst/2.:
+            f = (time - (tau - tconst/2. - tramp))/tramp
+        elif time > tau - tconst/2.  and time <= tau + tconst/2.:
+            f = 1.0
+        elif time > tau + tconst/2.  and time <= tau + tconst/2. + tramp:
+            f =(tau + tconst/2. + tramp - time)/tramp 
         else:
-            return 0.0    
+            f = 0.0    
+        return f*amplitude
 
     tdf = TDfunction()
     tdf.func = func     
