@@ -20,7 +20,7 @@
 
 import numpy as np
 import pylab as pl
-
+# from scipy.fftpack import fft, ifft, fftshift, ifftshift
 
 import quantumPy as qp
 
@@ -29,15 +29,15 @@ sb = qp.classical.SimulationBox(dim=dim, size = [10.0]*dim)
 
 
 omega = 1.55/27.211
-# omega = 5
+# omega = 2
 tc = 2.*np.pi/omega
-nconst = 1
-nup = 1
+nconst = 10
+nup = 2
 ntot = nconst + 2*nup
 tconst = nconst * tc 
 tramp = nup * tc
 tau = (tconst + 2.*tramp)/2.
-A = 0.5
+A = 0.05
 envelope = qp.td.tdf_trapezoidal( A, tconst, tramp, tau)
 laser = qp.td.ExternalField(sb, omega = omega, envelope = envelope, polarization = [0,1])
 E = qp.classical.td_external_field(sb, externalfield = laser)
@@ -52,9 +52,10 @@ e  = qp.classical.PointParticle(sbox = sb, velocity = [0., 0.], position = [Radi
 e.record_start()
 C = qp.classical.Constraint(ec, e)
 ring = qp.classical.ParticleSystem([ec, e], constraints = C)
+# ring = qp.classical.ParticleSystem([ec, e])
 
 
-dt = 0.1
+dt = 0.05
 final_time = tc*ntot
 
 times = np.linspace(0.0, final_time, num = int(final_time/dt), endpoint=False)
@@ -116,7 +117,6 @@ for i in range(0, int(final_time/dt)):
 
 fig2 = pl.figure()
 
-
 p1 = fig2.add_subplot(4, 1, 1, title = "position")
 p1.plot(times, pos[:,0],  label='x')
 p1.plot(times, pos[:,1],  label='y')
@@ -138,4 +138,17 @@ p4.plot(times, laser.field[:,1],  label='Ey')
 p4.legend( loc='lower left')
 
 pl.tight_layout()
+
+fig3 = pl.figure()
+p = fig3.add_subplot(1, 1, 1, title = "Harmonic specrtum")
+spect = np.zeros((times.size, sb.dim))
+for i in range(sb.dim):
+    spect[:,i] = np.fft.fftshift(np.fft.fft(acc[:,i]))
+
+w = np.fft.fftfreq(times.size, d =dt/(2.*np.pi)) 
+w = np.fft.fftshift(w)/omega
+p.plot(w, spect[:,0]**2+spect[:,1]**2)
+p.axes.set_xlim([0,np.amax(w)])
+p.set_yscale('log')
+
 pl.show()
