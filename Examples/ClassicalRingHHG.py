@@ -72,7 +72,7 @@ def classical_ring_hhg(**kwds):
     # ring = qp.classical.ParticleSystem([ec, e]) # just a free electron
 
 
-    dt = kwds.get('dt', 0.05)
+    dt = kwds.get('dt', tc/1024)
     final_time = tc*(ntot + 2)
 
     times = np.linspace(0.0, final_time, num = int(final_time/dt), endpoint=False)
@@ -117,7 +117,7 @@ def classical_ring_hhg(**kwds):
         pos[i] = e.pos
         # acc[i] = velocity[i]-velocity[i-1] if (i > 0) else 0.0 
         # 2p fd 
-        acc[i] = pos[i-1] + pos[i+1] -2 * pos[i] if (i > 1 and i < Nt -1) else 0.0 
+        acc[i] = pos[i-1] + pos[i+1] -2. * pos[i] if (i > 0 and i < Nt -1) else 0.0 
         T = e.kinetic_energy()
         E = T
         R = ring.particles[1].pos -ring.particles[0].pos
@@ -132,7 +132,7 @@ def classical_ring_hhg(**kwds):
             lpoint.set_ydata(laser.field[i,1])
             pl.draw()
     
-    acc = acc/dt**2
+    acc = acc/dt**2.
 
     spect = np.zeros((times.size, sb.dim))+0j
     for i in range(sb.dim):
