@@ -60,15 +60,19 @@ def classical_ring_hhg(**kwds):
 
     # Force an electron to move on a circle centered in ec
     Radius = kwds.get('radius', 2.7) 
+    theta0 = kwds.get('theta0', 0.0)
+    omega0 = kwds.get('omega0', 0.0)
+    mass = kwds.get('mass', 1.0)
+    
     ec = qp.classical.PointParticle(sbox = sb, locked = True, position = [0.0, 0.0], charge = 0.0)
-    e  = qp.classical.PointParticle(sbox = sb, velocity = [0., 0], position = [Radius/np.sqrt(2.),Radius/np.sqrt(2.)], charge = -1.0)
+    e  = qp.classical.PointParticle(sbox = sb, velocity = [0., 0], position = [Radius*np.cos(theta0),Radius*np.sin(theta0)], charge = -1.0, mass = mass)
     e.record_start()
     C = qp.classical.Constraint(ec, e)
     ring = qp.classical.ParticleSystem([ec, e], constraints = C)
     # ring = qp.classical.ParticleSystem([ec, e]) # just a free electron
 
 
-    dt = 0.05
+    dt = kwds.get('dt', 0.05)
     final_time = tc*(ntot + 2)
 
     times = np.linspace(0.0, final_time, num = int(final_time/dt), endpoint=False)
@@ -105,12 +109,15 @@ def classical_ring_hhg(**kwds):
     pos      = np.zeros((times.size, sb.dim)) 
     acc      = np.zeros((times.size, sb.dim)) 
 
-    for i in range(0, int(final_time/dt)):
+    Nt  = int(final_time/dt) 
+    for i in range(0, Nt):
         time = i*dt
         U.apply(ring, time = time)
         velocity[i] = e.velocity
         pos[i] = e.pos
-        acc[i] = velocity[i]-velocity[i-1] if (i > 0) else 0.0 
+        # acc[i] = velocity[i]-velocity[i-1] if (i > 0) else 0.0 
+        # 2p fd 
+        acc[i] = pos[i-1] + pos[i+1] -2 * pos[i] if (i > 1 and i < Nt -1) else 0.0 
         T = e.kinetic_energy()
         E = T
         R = ring.particles[1].pos -ring.particles[0].pos
@@ -124,6 +131,8 @@ def classical_ring_hhg(**kwds):
             lpoint.set_xdata(time)
             lpoint.set_ydata(laser.field[i,1])
             pl.draw()
+    
+    acc = acc/dt**2
 
     spect = np.zeros((times.size, sb.dim))+0j
     for i in range(sb.dim):
@@ -132,6 +141,11 @@ def classical_ring_hhg(**kwds):
     w = np.fft.fftfreq(times.size, d =dt/(2.*np.pi)) 
     w = np.fft.fftshift(w)/omega
 
+    spectx = np.zeros((times.size, sb.dim))+0j
+    for i in range(sb.dim):
+        spectx[:,i] = np.fft.fftshift(np.fft.fft(pos[:,i]))
+
+    
     
     if kwds.get('plot',False):
         fig2 = pl.figure()
@@ -158,17 +172,23 @@ def classical_ring_hhg(**kwds):
 
         pl.tight_layout()
 
-
         fig3 = pl.figure()
-        p = fig3.add_subplot(1, 1, 1, title = "Harmonic specrtum")
+        p = fig3.add_subplot(1, 1, 1, title = "Harmonic specrtum from acc (2nd order FD)")
         p.plot(w, np.abs(spect[:,0])**2+np.abs(spect[:,1])**2)
+        # p.axes.set_xlim([0,np.amax(w)])
+        p.axes.set_xlim([0,100])
+        p.set_yscale('log')
+
+        fig4 = pl.figure()
+        p = fig4.add_subplot(1, 1, 1, title = "Harmonic specrtum from position")
+        p.plot(w, np.abs(spectx[:,0])**2+np.abs(spectx[:,1])**2)
         # p.axes.set_xlim([0,np.amax(w)])
         p.axes.set_xlim([0,100])
         p.set_yscale('log')
 
         pl.show()
     
-    return (times, pos, velocity, laser.field,  w, spect)
+    return (times, pos, velocity, acc, laser.field,  w, spect, spectx)
 
 
 #############    
@@ -176,6 +196,9 @@ def classical_ring_hhg(**kwds):
 ############
 if __name__ == '__main__':
 
-    times, pos, vel, laser, w, spect = classical_ring_hhg(omega = 0.6297613001523616/27.211, nconst = 5, plot = True)
+    omega = 0.6297613001523616/27.211
+
+    times, pos, vel, acc, laser, w, spect, spectx= \
+    classical_ring_hhg(omega = omega, nconst = 10, plot = True)
 
 
