@@ -251,7 +251,7 @@ def evolve_mask(ABWidth, k, type, verbose = True, anim = False, quick = False, *
         lam = kwds.get('lam', 1.0)
         x0 = Radius - ABWidth
         g = ses_g(type = kwds.get('gfunc','tanh'), lam = lam)
-        f = ses_f(g, theta = 0.2)
+        f = ses_f(g, theta )
         fM = qp.MeshFunction(f(box.points, x0), box)
         maskM = fM
         GO = qp.Gradient(box)
