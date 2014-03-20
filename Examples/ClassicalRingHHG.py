@@ -133,7 +133,8 @@ def classical_ring_hhg(**kwds):
             pl.draw()
     
     acc = acc/dt**2.
-
+    
+    # HHG spectrum from acceleration
     spect = np.zeros((times.size, sb.dim))+0j
     for i in range(sb.dim):
         spect[:,i] = np.fft.fftshift(np.fft.fft(acc[:,i]))
@@ -141,6 +142,7 @@ def classical_ring_hhg(**kwds):
     w = np.fft.fftfreq(times.size, d =dt/(2.*np.pi)) 
     w = np.fft.fftshift(w)/omega
 
+    # HHG spectrum from position
     spectx = np.zeros((times.size, sb.dim))+0j
     for i in range(sb.dim):
         spectx[:,i] = np.fft.fftshift(np.fft.fft(pos[:,i]))
