@@ -160,8 +160,8 @@ def ses_g(type = 'tanh', **kwds):
 
 def evolve_mask(ABWidth, k, type, verbose = True, anim = False, quick = False, **kwds):
 
-    dR = 0.1# 0.1
-    dt = 0.01
+    dR =  kwds.get('dR', 0.1) # 0.1
+    dt =  kwds.get('dt', 0.01)
     sigma = 4.0 * np.sqrt(2.0)/abs(k)
     # dR = 0.25*sigma
     # dt = 0.005/(k**2/2) 
