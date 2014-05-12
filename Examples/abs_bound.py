@@ -293,7 +293,7 @@ def evolve_mask(ABWidth, k, type, verbose = True, anim = False, quick = False, *
         maskf = mask(ABWidth)
         maskM = qp.MeshFunction(maskf(box.points), box)
         M = qp.scalar_pot(maskf)
-        U = U*M
+        U = M*U
 
     if type == 'mask_cap_sin2':
         eta = kwds.get('eta', 0.2)
