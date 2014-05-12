@@ -301,7 +301,7 @@ def evolve_mask(ABWidth, k, type, verbose = True, anim = False, quick = False, *
         impotM = qp.MeshFunction(impotf(box.points), box)
         maskM = np.exp(-1j * dt * impotM)
         M = qp.scalar_pot(maskM)
-        U = U*M
+        U = M*U
 
     if type == 'mask_cap_poly':
         eta = kwds.get('eta', 0.03)
@@ -309,7 +309,7 @@ def evolve_mask(ABWidth, k, type, verbose = True, anim = False, quick = False, *
         impotM = qp.MeshFunction(impotf(box.points), box)
         maskM = np.exp(-1j * dt * impotM)
         M = qp.scalar_pot(maskM)
-        U = U*M
+        U = M*U
 
     if type == 'mask_cap_ses':
         theta  = kwds.get('theta', 0.1)
@@ -328,7 +328,7 @@ def evolve_mask(ABWidth, k, type, verbose = True, anim = False, quick = False, *
         V2 = 0.5*(1. - fM**(-2.))
         Vcap = qp.scalar_pot(V0) + qp.scalar_pot(V1) * GO + qp.scalar_pot(V2) * LO
         M = qp.exponential(Vcap, exp_step = -1j*dt, order =  kwds.get('mask_exp_order', 4)) 
-        U = U*M
+        U = M*U
         #force borders to be zero 
         Ubox = qp.scalar_pot(mask(12*dR, type = 'unit_box'), box)
         U = Ubox*U
