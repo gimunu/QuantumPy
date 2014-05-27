@@ -232,7 +232,7 @@ def evolve_mask(ABWidth, k, type, verbose = True, anim = False, quick = False, *
         if kwds.get('LeadingOrderOnly', False):
             impotM =  1j/dt * Mm  
         else:             
-            impotM =  1j/dt * Mm  - 1./4.*LMm - 1./12. * GMm**2  
+            impotM =  1j/dt * Mm  - 1./2.*LMm + 1./6. * GMm**2  
         # pl.plot(box.points, impotM.real, lw = 2, label='Re[Impot]')    
         # pl.plot(box.points, impotM.imag, lw = 2, label='Im[Impot]')
         # # pl.legend()
@@ -240,8 +240,11 @@ def evolve_mask(ABWidth, k, type, verbose = True, anim = False, quick = False, *
         # exit()
         Vstatic = qp.scalar_pot(impotM)
 
-        VLMm = qp.scalar_pot(-1./2.*GMm) 
-        Vcap = Vstatic + VLMm * GO 
+        if kwds.get('LeadingOrderOnly', False):
+            Vcap = Vstatic  
+        else:
+            VLMm = qp.scalar_pot(-GMm) 
+            Vcap = Vstatic + VLMm * GO 
         H += Vcap  
 
         
