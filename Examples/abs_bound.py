@@ -378,6 +378,10 @@ def evolve_mask(ABWidth, k, type, verbose = True, anim = False, quick = False, *
         print "i        t              <E>"
     # time-evolution loop
 
+    NFiles=kwds.get('saveNumber', 10)
+
+    
+
     Niter = int(T/dt)
     t1 = TTtime.time()
     for i in range(0, Niter):
@@ -405,7 +409,15 @@ def evolve_mask(ABWidth, k, type, verbose = True, anim = False, quick = False, *
                 pl.draw()
             t2 = TTtime.time() 
             DT = t2 - t1
-            t1 = t2   
+            t1 = t2  
+            
+            if i%int(Niter/NFiles) == 0 :
+                if   'wfs' in kwds.get('save'): 
+                    qp.write(wft,"wft_%06d"%i)
+                if 'impot' in kwds.get('save'): 
+                    qp.write(impotM,"impot_%06d"%i)
+                # elif 'mask' in kwds.get('save')
+             
             if verbose :
                 print "%d\t %s \t%f \t%f \t%f \t(%2.3f s) -- %e"%(i, i*dt, E.real, N, NEx, DT, wft[-1].real)
                 
