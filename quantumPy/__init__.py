@@ -17,7 +17,7 @@
 
 import numpy as np
 
-__all__ = ['base', 'grid', 'operators', 'td', 'graph', 'build', 'classical']
+__all__ = ['base', 'grid', 'operators', 'td', 'graph', 'build', 'classical','output']
 
 for module in __all__:
     exec 'from . import {0}'.format(module)
@@ -26,7 +26,8 @@ for module in __all__:
 available = [('operators', operators.__all__),
              ('grid.mesh', grid.mesh.__all__), 
              ('td', ['Propagator']),
-             ('graph', ['plot'])]
+             ('graph', ['plot']),
+             ('output', ['write'])]
 for module, names in available:
     exec 'from .{0} import {1}'.format(module, ', '.join(names))
     __all__.extend(names)
